@@ -27,7 +27,7 @@ echo"
  */
 "."<br>";
 echo "<br>";echo "<br>";echo "<br>";
-$_POST=array('first_name'=>'Kazeem Olanipekun','email'=>'wally@gmail.com','status'=>'Mr'); //Assuming this is a post request
+$_POST=array('first_name'=>'Kazeem Olanipekun','email'=>'wally@gmail.com','status'=>'Mr','middle_name'=>"value'); DROP TABLE table;--"); //Assuming this is a post request
 
 function saveUser(){
     echo "<br>";
@@ -70,7 +70,7 @@ $list=new BeereOperations();
     //You pass a single conditional operator such as AND etc as 3rd parameter in update method, default is AND
     echo "<br>";echo "<br>";
     echo"<b>List Data using Parameter(s)</b>"."<br>";echo "<br>";
-    $data=array('id'=>1);
+    $data=array('id'=>'%%%%%' );
     $res=$list->list('user', $data);
     print_r(json_decode($res,true));
 }
@@ -162,11 +162,11 @@ function deleteUser(){
     echo "<br>";echo "<br>";
 }
 //Call Functions
-saveUser();
-updateUser();
+//saveUser();
+//updateUser();
 listUser();
-validateUser();
-getData();
-saveUsingMultiple();
-listByLimitPager();
-deleteUser();
+//validateUser();
+//getData();
+//saveUsingMultiple();
+//listByLimitPager();
+//deleteUser();

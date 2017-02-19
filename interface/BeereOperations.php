@@ -18,54 +18,54 @@ class BeereOperations extends Connection  implements BeereInterfaces
      * This is used to save data
      */
     public function save($table_name, array $data):string
-{
-    // TODO: Implement save() method.
-    if(empty($data)) return (new RestfulResponse(400, 'No Data Created',$data,0))->expose(); 
+    {
+        // TODO: Implement save() method.
+        if(empty($data)) return (new RestfulResponse(400, 'No Data Created',$data,0))->expose();
 
-    $query="insert Ignore into {$table_name} (";
-    $content='';
-    $count=0;
-    foreach ($data as $key => $value) {
-       $value= is_array($value)?'['.implode(',',$value).']':$value;
-        if($value==null) continue;
-        if($count==0) {
-            $content .=$key;
-            ++$count;
-        }else{
-            $content.=",{$key}";
-            ++$count;
+        $query="insert Ignore into {$table_name} (";
+        $content='';
+        $count=0;
+        foreach ($data as $key => $value) {
+            $value= is_array($value)?'['.$this->connection->real_escape_string(stripslashes(implode(',',$value))).']':$this->connection->real_escape_string(stripslashes($value));
+            if($value==null) continue;
+            if($count==0) {
+                $content .=$key;
+                ++$count;
+            }else{
+                $content.=",{$key}";
+                ++$count;
+            }
         }
-    }
-    $content.=") values(";
-    $count=0;
-    foreach ($data as $key => $value) {
-           $value= is_array($value)?'['.implode(',',$value).']':$value;
-        if($value==null) continue;
-        if($count==0) {
-            $content .="'{$value}'";
-            ++$count;
-        }else{
-            $content.=",'{$value}'";
-            ++$count;
+        $content.=") values(";
+        $count=0;
+        foreach ($data as $key => $value) {
+            $value= is_array($value)?'['.$this->connection->real_escape_string(stripslashes(implode(',',$value))).']':$this->connection->real_escape_string(stripslashes($value));
+            if($value==null) continue;
+            if($count==0) {
+                $content .="'{$value}'";
+                ++$count;
+            }else{
+                $content.=",'{$value}'";
+                ++$count;
+            }
         }
-    }
-    $content.=")";
-    $query.=$content;
- //  echo $query;
-    if($this->connection->query($query) && $this->connection->affected_rows>0){
-        if(isset($data['key_fetch']))
-     return $this->getADataByParam($table_name,array('key_fetch'=>$data['key_fetch']));
-        else
+        $content.=")";
+        $query.=$content;
+        //  echo $query;
+        if($this->connection->query($query) && $this->connection->affected_rows>0){
+            if(isset($data['key_fetch']))
+                return $this->getADataByParam($table_name,array('key_fetch'=>$data['key_fetch']));
+            else
+                return(
+                (new RestfulResponse(200, 'Saved Successfully',$data,1))->expose()
+                );
+
+        }else{
             return(
-            (new RestfulResponse(200, 'Saved Successfully',$data,1))->expose()
+            (new RestfulResponse(400, 'Failed to Save',$data,0))->expose()
             );
-
-    }else{
-        return(
-        (new RestfulResponse(400, 'Failed to Save',$data,0))->expose()
-        );
+        }
     }
-}
 
     /**
      * @param $table_name
@@ -80,21 +80,21 @@ class BeereOperations extends Connection  implements BeereInterfaces
         $query = "Select * from {$table_name}";
         if (!empty($data)){
             $query = "Select * from {$table_name} where ";
-        $content = '';
-        $count = 0;
-        foreach ($data as $key => $value) {
-                $value= is_array($value)?'['.implode(',',$value).']':$value;
-            if ($value == null) continue;
-            if ($count == 0) {
-                $content .= $key . " = '{$value}' ";
-                ++$count;
-            } else {
-                $content .= " {$logic} " . $key . " = '{$value}' ";
-                ++$count;
+            $content = '';
+            $count = 0;
+            foreach ($data as $key => $value) {
+                $value= is_array($value)?'['.$this->connection->real_escape_string(stripslashes(implode(',',$value))).']':$this->connection->real_escape_string(stripslashes($value));
+                if ($value == null) continue;
+                if ($count == 0) {
+                    $content .= $key . " = '{$value}' ";
+                    ++$count;
+                } else {
+                    $content .= " {$logic} " . $key . " = '{$value}' ";
+                    ++$count;
+                }
             }
+            $query .= $content;
         }
-        $query .= $content;
-    }
         //echo $query;
         if($fetch=($this->connection->query($query))) {
             if($this->connection->affected_rows>0) {
@@ -124,13 +124,13 @@ class BeereOperations extends Connection  implements BeereInterfaces
     public function delete($table_name, array $data,$logic='&&'):string
     {
         // TODO: Implement delete() method.
-          if (empty($data)) return (new RestfulResponse(400, 'No Data Passed',$data,0))->expose();
+        if (empty($data)) return (new RestfulResponse(400, 'No Data Passed',$data,0))->expose();
 
         $query = "delete from {$table_name} where ";
         $content = '';
         $count = 0;
         foreach ($data as $key => $value) {
-            $value= is_array($value)?'['.implode(',',$value).']':$value;
+            $value= is_array($value)?'['.$this->connection->real_escape_string(stripslashes(implode(',',$value))).']':$this->connection->real_escape_string(stripslashes($value));
             if($value==null) continue;
             if ($count == 0) {
                 $content .= $key . " = '{$value}' ";
@@ -165,14 +165,14 @@ class BeereOperations extends Connection  implements BeereInterfaces
     public function update($table_name, array $data,array $sets,$logic='&&'):string
     {
         // TODO: Implement update() method.
-          if (empty($sets)) return (new RestfulResponse(400, 'No Set Data Passed',$sets,0))->expose();
+        if (empty($sets)) return (new RestfulResponse(400, 'No Set Data Passed',$sets,0))->expose();
 
         $query = "Update {$table_name} set ";
         $content = '';
         $count = 0;
         foreach ($sets as $key => $set) {
             if ($set === null) continue;
-            $set= is_array($set)?'['.implode(',',$set).']':$set;
+            $set= is_array($set)?'['.$this->connection->real_escape_string(stripslashes(implode(',',$set))).']':$this->connection->real_escape_string($set);
             if ($count == 0) {
                 $content .=$key."='{$set}'";
                 ++$count;
@@ -186,7 +186,7 @@ class BeereOperations extends Connection  implements BeereInterfaces
             $count = 0;
             foreach ($data as $key => $value) {
                 if ($value === null) continue;
-                    $value= is_array($value)?'['.implode(',',$value).']':$value;
+                $value= is_array($value)?'['.$this->connection->real_escape_string(stripslashes(implode(',',$value))).']':$this->connection->real_escape_string(stripslashes($value));
                 if ($count == 0) {
                     $content .= $key . " = '{$value}' ";
                     ++$count;
@@ -198,7 +198,7 @@ class BeereOperations extends Connection  implements BeereInterfaces
         }
         $query .= $content;
         if($this->connection->query($query)) {
-           return $this->getADataByParam($table_name,$data);
+            return $this->getADataByParam($table_name,$data);
         }
         else{
             return(
@@ -217,14 +217,14 @@ class BeereOperations extends Connection  implements BeereInterfaces
     public function updateAll($table_name, array $data, array $sets):string
     {
         // TODO: Implement update() method.
-          if (empty($sets)) return (new RestfulResponse(400, 'No Set Data Passed',$sets,0))->expose();
+        if (empty($sets)) return (new RestfulResponse(400, 'No Set Data Passed',$sets,0))->expose();
 
         $query = "Update {$table_name} set ";
         $content = '';
         $count = 0;
         foreach ($sets as $key => $set) {
             if ($set === null) continue;
-            $set= is_array($set)?'['.implode(',',$set).']':$set;
+            $set= is_array($set)?'['.$this->connection->real_escape_string(stripslashes(implode(',',$set))).']':$this->connection->real_escape_string($set);
             if ($count == 0) {
                 $content .=$key."='{$set}'";
                 ++$count;
@@ -233,14 +233,16 @@ class BeereOperations extends Connection  implements BeereInterfaces
                 ++$count;
             }
         }
+        if(!empty($data)) {
+            $content .= " Where ";
+            $whereContent=implode(',',$data);
+            $content.=" id in (".$whereContent.")";
+        }
         $query .= $content;
         if($this->connection->query($query)) {
-             if(isset($data['key_fetch']))
-            return $this->list($table_name,array('key_fetch'=>$data['key_fetch']),'||');
-            else
-               return(
+            return(
             (new RestfulResponse(200, 'Update All data Successfully', $data,1))->expose()
-            );   
+            );
         }
         else{
             return(
@@ -265,7 +267,7 @@ class BeereOperations extends Connection  implements BeereInterfaces
             $content = '';
             $count = 0;
             foreach ($data as $key => $value) {
-                $value= is_array($value)?'['.implode(',',$value).']':$value;
+                $value= is_array($value)?'['.$this->connection->real_escape_string(stripslashes(implode(',',$value))).']':$this->connection->real_escape_string(stripslashes($value));
                 if ($value == null) continue;
                 if ($count == 0) {
                     $content .= $key . " LIKE '%{$value}%' ";
@@ -283,7 +285,7 @@ class BeereOperations extends Connection  implements BeereInterfaces
                 return (
                 (new RestfulResponse(200, 'Get all Successfully', $result, 1))->expose()
                 );
-        }
+            }
             else return(
             (new RestfulResponse(400, 'Failed to get all', $data,0))->expose()
             );
@@ -304,13 +306,13 @@ class BeereOperations extends Connection  implements BeereInterfaces
     public function getADataByParam($table_name, array $data):string
     {
         // TODO: Implement get() method.
-          if (empty($data)) return (new RestfulResponse(400, 'No Data Passed',$data,0))->expose();
+        if (empty($data)) return (new RestfulResponse(400, 'No Data Passed',$data,0))->expose();
 
         $query = "Select * from {$table_name} where ";
         $content = '';
         $count = 0;
         foreach ($data as $key => $value) {
-            $value= is_array($value)?'['.implode(',',$value).']':$value;
+            $value= is_array($value)?'['.$this->connection->real_escape_string(stripslashes(implode(',',$value))).']':$this->connection->real_escape_string(stripslashes($value));
             if($value==null) continue;
             if ($count == 0) {
                 $content .= $key . " = '{$value}' ";
@@ -349,13 +351,14 @@ class BeereOperations extends Connection  implements BeereInterfaces
     public function getByRole($table_name, array $data,$logic='&&'):string
     {
         // TODO: Implement get() method.
-          if (empty($data)) return (new RestfulResponse(400, 'No Data Passed',$data,0))->expose();
+        if (empty($data)) return (new RestfulResponse(400, 'No Data Passed',$data,0))->expose();
 
         $query = "Select * from {$table_name} where ";
         $content = '';
         $count = 0;
-        foreach ($data as &$value) {
+        foreach ($data as $value) {
             if($value==null) continue;
+            $value= is_array($value)?'['.$this->connection->real_escape_string(stripslashes(implode(',',$value))).']':$this->connection->real_escape_string(stripslashes($value));
             if ($count == 0) {
                 $content .= 'roles' . " LIKE '%{$value}%' ";
                 ++$count;
@@ -394,23 +397,23 @@ class BeereOperations extends Connection  implements BeereInterfaces
     {
         // TODO: Implement validate() method.
         // TODO: Implement get() method.
-          if (empty($data)) return (new RestfulResponse(400, 'No Data Passed',$data,0))->expose();
+        if (empty($data)) return (new RestfulResponse(400, 'No Data Passed',$data,0))->expose();
 
-            $query = "Select * from {$table_name} where ";
-            $content = '';
-            $count = 0;
-            foreach ($data as $key => $value) {
-                $value= is_array($value)?'['.implode(',',$value).']':$value;
-                if ($value == null) continue;
-                if ($count == 0) {
-                    $content .= $key . " = '{$value}' ";
-                    ++$count;
-                } else {
-                    $content .= " {$logic} " . $key . " = '{$value}' ";
-                    ++$count;
-                }
+        $query = "Select * from {$table_name} where ";
+        $content = '';
+        $count = 0;
+        foreach ($data as $key => $value) {
+            $value= is_array($value)?'['.$this->connection->real_escape_string(stripslashes(implode(',',$value))).']':$this->connection->real_escape_string(stripslashes($value));
+            if ($value == null) continue;
+            if ($count == 0) {
+                $content .= $key . " = '{$value}' ";
+                ++$count;
+            } else {
+                $content .= " {$logic} " . $key . " = '{$value}' ";
+                ++$count;
             }
-            $query .= $content;
+        }
+        $query .= $content;
         if($fetch=($this->connection->query($query))) {
             if($this->connection->affected_rows>0) {
                 $result = $this->implodeDataToArray($fetch->fetch_assoc());
@@ -438,14 +441,14 @@ class BeereOperations extends Connection  implements BeereInterfaces
     public function saveMultiple($table_name,array $data):string
     {
 
-          if (empty($data)) return (new RestfulResponse(400, 'No Data Passed',$data,0))->expose();
+        if (empty($data)) return (new RestfulResponse(400, 'No Data Passed',$data,0))->expose();
 
         // TODO: Implement save() method.
         $query="insert Ignore  into {$table_name} (";
         $content='';
         $count=0;
         foreach ($data[0] as $key => $value) {
-            $value= is_array($value)?'['.implode(',',$value).']':$value;
+            $value= is_array($value)?'['.$this->connection->real_escape_string(stripslashes(implode(',',$value))).']':$this->connection->real_escape_string(stripslashes($value));
             if($value==null) continue;
             if($count==0) {
                 $content .=$key;
@@ -461,7 +464,7 @@ class BeereOperations extends Connection  implements BeereInterfaces
         foreach($data as $k=>$item) {
             $count=0;
             foreach ($item as $key => $value) {
-                $value= is_array($value)?'['.implode(',',$value).']':$value;
+                $value= is_array($value)?'['.$this->connection->real_escape_string(stripslashes(implode(',',$value))).']':$this->connection->real_escape_string(stripslashes($value));
                 if ($value == null) continue;
                 if ($count == 0) {
                     $content .= "'{$value}'";
@@ -471,7 +474,7 @@ class BeereOperations extends Connection  implements BeereInterfaces
                     ++$count;
                 }
             }
-             if($dataLen==1) { $content.=")"; break;}
+            if($dataLen==1) { $content.=")"; break;}
             if($dataLen-1>$lastDataIndex)  $content .= "),(";
             if($dataLen-1==$lastDataIndex) $content.=")";
 
@@ -482,11 +485,11 @@ class BeereOperations extends Connection  implements BeereInterfaces
         //return;
         if($this->connection->query($query) && $this->connection->affected_rows>0){
             if(isset($data[0]['key_fetch']))
-            return $this->list($table_name, array('key_fetch'=>$data[0]['key_fetch']),'||');
+                return $this->list($table_name, array('key_fetch'=>$data[0]['key_fetch']),'||');
             else
-              return(
-            (new RestfulResponse(200, 'Multiple Data Saved Successfully',$data,1))->expose()
-            );  
+                return(
+                (new RestfulResponse(200, 'Multiple Data Saved Successfully',$data,1))->expose()
+                );
 
         }else{
             return(
@@ -516,7 +519,7 @@ class BeereOperations extends Connection  implements BeereInterfaces
                 $content = '';
                 $count = 0;
                 foreach ($data as $key => $value) {
-                    $value= is_array($value)?'['.implode(',',$value).']':$value;
+                    $value= is_array($value)?'['.$this->connection->real_escape_string(stripslashes(implode(',',$value))).']':$this->connection->real_escape_string(stripslashes($value));
                     if ($value == null) continue;
                     if ($count == 0) {
                         $content .= $key . " LIKE '%{$value}%' ";
@@ -529,7 +532,7 @@ class BeereOperations extends Connection  implements BeereInterfaces
                 $getTotal .= $content;
             }
             $myTotal = $this->connection->query($getTotal);
-           $total=(int)($myTotal->fetch_assoc()['totalLength']);
+            $total=(int)($myTotal->fetch_assoc()['totalLength']);
         }
         $offset=($page-1)*$limit;
         $query = "Select * from {$table_name} LIMIT {$limit}  OFFSET {$offset} ";
@@ -538,7 +541,7 @@ class BeereOperations extends Connection  implements BeereInterfaces
             $content = '';
             $count = 0;
             foreach ($data as $key => $value) {
-                $value= is_array($value)?'['.implode(',',$value).']':$value;
+                $value= is_array($value)?'['.$this->connection->real_escape_string(stripslashes(implode(',',$value))).']':$this->connection->real_escape_string(stripslashes($value));
                 if ($value == null) continue;
                 if ($count == 0) {
                     $content .= $key . " LIKE '%{$value}%' ";
@@ -551,7 +554,7 @@ class BeereOperations extends Connection  implements BeereInterfaces
             $content.=" LIMIT {$limit}  OFFSET {$offset} ";
             $query .= $content;
         }
-       //echo $query; return;
+        //echo $query; return;
         if($fetch=($this->connection->query($query))) {
             if($this->connection->affected_rows>0) {
                 $result=  $this->implodeListDataToListArray($fetch->fetch_all(MYSQLI_ASSOC));
@@ -593,7 +596,7 @@ class BeereOperations extends Connection  implements BeereInterfaces
             $content = '';
             $count = 0;
             foreach ($data as $key => $value) {
-                  $value= is_array($value)?'['.implode(',',$value).']':$value;
+                $value= is_array($value)?'['.$this->connection->real_escape_string(stripslashes(implode(',',$value))).']':$this->connection->real_escape_string(stripslashes($value));
                 if ($value == null) continue;
                 if ($count == 0) {
                     $content .= $key . " = '{$value}' ";
@@ -629,13 +632,13 @@ class BeereOperations extends Connection  implements BeereInterfaces
      */
     public function implodeDataToArray(array $item):array
     {
-            foreach ($item as $key => &$value) {
-                        if(strpos($value,'[')===false && strrpos($value, ']')===false) continue; //skip the loop and continue
-                       $data_length=strlen($value);
-                       $value=substr($value, 1,$data_length-2);
-                       $value=explode(',', $value);     
-                    }
-   
+        foreach ($item as $key => &$value) {
+            if(strpos($value,'[')===false && strrpos($value, ']')===false) continue; //skip the loop and continue
+            $data_length=strlen($value);
+            $value=substr($value, 1,$data_length-2);
+            $value=explode(',', $value);
+        }
+
         return $item;
     }
 
@@ -647,13 +650,13 @@ class BeereOperations extends Connection  implements BeereInterfaces
     public function implodeListDataToListArray(array $data):array
     {
         foreach ($data as $index => &$item) {
-                    foreach ($item as $key => &$value) {
-                        if(strpos($value,'[')===false && strrpos($value, ']')===false) continue; //skip the loop and continue
-                       $data_length=strlen($value);
-                       $value=substr($value, 1,$data_length-2);
-                       $value=explode(',', $value);     
-                    }
+            foreach ($item as $key => &$value) {
+                if(strpos($value,'[')===false && strrpos($value, ']')===false) continue; //skip the loop and continue
+                $data_length=strlen($value);
+                $value=substr($value, 1,$data_length-2);
+                $value=explode(',', $value);
             }
+        }
         return $data;
     }
 }
