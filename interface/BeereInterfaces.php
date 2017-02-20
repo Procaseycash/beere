@@ -17,7 +17,8 @@ public function getAll($table_name,array $data,$logic):string;
 public function getADataByParam($table_name,array $data):string;
 public function getByRole($table_name,array $data,$logic):string;
 public function saveMultiple($table_name,array $data):string;
-public function updateAll($table_name, array $data,array $sets):string;
+public function updateAll($table_name, array $data,array $sets,$logic):string;
 public function listByLimit($table_name,array $data,$logic,$page,$limit):string;
 public function getLastIndex($table_name,array $data,$logic):string;
+public function countByParam($table_name,array $data,$logic):string;
 }

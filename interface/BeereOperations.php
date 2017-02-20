@@ -209,12 +209,13 @@ class BeereOperations extends Connection  implements BeereInterfaces
 
     /**
      * @param $table_name
-     * @param $data
-     * @param $sets
+     * @param array $data
+     * @param array $sets
+     * @param string $logic
      * @return string
      * This is used to update multiple data and return list of updated data synchronously
      */
-    public function updateAll($table_name, array $data, array $sets):string
+    public function updateAll($table_name, array $data, array $sets,  $logic='&&'):string
     {
         // TODO: Implement update() method.
         if (empty($sets)) return (new RestfulResponse(400, 'No Set Data Passed',$sets,0))->expose();
@@ -235,8 +236,23 @@ class BeereOperations extends Connection  implements BeereInterfaces
         }
         if(!empty($data)) {
             $content .= " Where ";
-            $whereContent=implode(',',$data);
-            $content.=" id in (".$whereContent.")";
+            $count=0;
+            foreach ($data as $key => $value) {
+                if ($value === null) continue;
+                $value= is_array($value)?$this->connection->real_escape_string(stripslashes(implode(',',$value))):$this->connection->real_escape_string($value);
+                if ($count == 0) {
+                    $content .= $key . " in ('{$value}') ";
+                    ++$count;
+                } else {
+                    if(strpos($value,',')===false || strrpos($value, ',')===false) $sqlFunction='like';
+                    else $sqlFunction='in';
+                    $content .= " {$logic} " . $key . " {$sqlFunction} '{$value}' ";
+                    ++$count;
+                }
+            }
+
+           /* $whereContent=implode(',',$data);
+            $content.=" id in (".$whereContent.")";*/
         }
         $query .= $content;
         if($this->connection->query($query)) {
@@ -624,6 +640,50 @@ class BeereOperations extends Connection  implements BeereInterfaces
         }
     }
 
+    /**
+     * @param $table_name
+     * @param array $data
+     * @param string $logic
+     * @return string
+     * This is used to perform count operation
+     *
+     */
+    public function countByParam($table_name,array $data,$logic='&&'):string
+    {
+        // TODO: Implement count() method.
+        $result=array();
+        $getTotal = "Select COUNT(DISTINCT id) as totalLength from {$table_name}";
+        if (!empty($data)){
+            $getTotal = "Select COUNT(DISTINCT id) as totalLength from {$table_name} where ";
+            $content = '';
+            $count = 0;
+            foreach ($data as $key => $value) {
+                $value= is_array($value)?'['.$this->connection->real_escape_string(stripslashes(implode(',',$value))).']':$this->connection->real_escape_string(stripslashes($value));
+                if ($value == null) continue;
+                if ($count == 0) {
+                    $content .= $key . " = '{$value}' ";
+                    ++$count;
+                } else {
+                    $content .= " {$logic} " . $key . " = '{$value}' ";
+                    ++$count;
+                }
+            }
+            $getTotal .= $content;
+        }
+        // echo $getTotal;
+        if($myTotal = $this->connection->query($getTotal)) {
+            $total=(int)($myTotal->fetch_assoc()['totalLength']);
+            $result[] = $total;
+            return (
+            (new RestfulResponse(200, 'Count Successful', $result, 1))->expose());
+        }
+        else{
+            $data=array(0);
+            return(
+            (new RestfulResponse(400, 'Failed to List',$data,0))->expose()
+            );
+        }
+    }
 
     /**
      * @param $item
