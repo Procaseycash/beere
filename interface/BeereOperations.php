@@ -20,49 +20,55 @@ class BeereOperations extends Connection  implements BeereInterfaces
     public function save($table_name, array $data):string
     {
         // TODO: Implement save() method.
-        if(empty($data)) return (new RestfulResponse(400, 'No Data Created',$data,0))->expose();
+        if (empty($data)) return (new RestfulResponse(400, 'No Data Created', $data, 0))->expose();
 
-        $query="insert Ignore into {$table_name} (";
-        $content='';
-        $count=0;
+        $query = "insert Ignore into {$table_name} (";
+        $content = '';
+        $count = 0;
         foreach ($data as $key => $value) {
-            $value= is_array($value)?'['.$this->connection->real_escape_string(stripslashes(implode(',',$value))).']':$this->connection->real_escape_string(stripslashes($value));
-            if($value==null) continue;
-            if($count==0) {
-                $content .=$key;
+            $value = is_array($value) ? '[' . $this->connection->real_escape_string(stripslashes(implode(',', $value))) . ']' : $this->connection->real_escape_string(stripslashes($value));
+            if ($value == null) continue;
+            if ($count == 0) {
+                $content .= $key;
                 ++$count;
-            }else{
-                $content.=",{$key}";
+            } else {
+                $content .= ",{$key}";
                 ++$count;
             }
         }
-        $content.=") values(";
-        $count=0;
+        $content .= ") values(";
+        $count = 0;
         foreach ($data as $key => $value) {
-            $value= is_array($value)?'['.$this->connection->real_escape_string(stripslashes(implode(',',$value))).']':$this->connection->real_escape_string(stripslashes($value));
-            if($value==null) continue;
-            if($count==0) {
-                $content .="'{$value}'";
+            $value = is_array($value) ? '[' . $this->connection->real_escape_string(stripslashes(implode(',', $value))) . ']' : $this->connection->real_escape_string(stripslashes($value));
+            if ($value == null) continue;
+            if ($count == 0) {
+                $content .= "'{$value}'";
                 ++$count;
-            }else{
-                $content.=",'{$value}'";
+            } else {
+                $content .= ",'{$value}'";
                 ++$count;
             }
         }
-        $content.=")";
-        $query.=$content;
+        $content .= ")";
+        $query .= $content;
         //  echo $query;
-        if($this->connection->query($query) && $this->connection->affected_rows>0){
-            if(isset($data['key_fetch']))
-                return $this->getADataByParam($table_name,array('key_fetch'=>$data['key_fetch']));
-            else
-                return(
-                (new RestfulResponse(200, 'Saved Successfully',$data,1))->expose()
-                );
+        try {
+            if ($this->connection->query($query) && $this->connection->affected_rows > 0) {
+                if (isset($data['key_fetch']))
+                    return $this->getADataByParam($table_name, array('key_fetch' => $data['key_fetch']));
+                else
+                    return (
+                    (new RestfulResponse(200, 'Saved Successfully', $data, 1))->expose()
+                    );
 
-        }else{
-            return(
-            (new RestfulResponse(400, 'Failed to Save',$data,0))->expose()
+            } else {
+                return (
+                (new RestfulResponse(400, 'Failed to Save', $data, 0))->expose()
+                );
+            }
+        } catch (mysqli_sql_exception $e) {
+            return (
+            (new RestfulResponse(400, 'Unable to perform request with error message: ' . $e->getMessage(), $data, 0))->expose()
             );
         }
     }
@@ -78,12 +84,12 @@ class BeereOperations extends Connection  implements BeereInterfaces
     {
         // TODO: Implement list() method.
         $query = "Select * from {$table_name}";
-        if (!empty($data)){
+        if (!empty($data)) {
             $query = "Select * from {$table_name} where ";
             $content = '';
             $count = 0;
             foreach ($data as $key => $value) {
-                $value= is_array($value)?'['.$this->connection->real_escape_string(stripslashes(implode(',',$value))).']':$this->connection->real_escape_string(stripslashes($value));
+                $value = is_array($value) ? '[' . $this->connection->real_escape_string(stripslashes(implode(',', $value))) . ']' : $this->connection->real_escape_string(stripslashes($value));
                 if ($value == null) continue;
                 if ($count == 0) {
                     $content .= $key . " = '{$value}' ";
@@ -96,20 +102,24 @@ class BeereOperations extends Connection  implements BeereInterfaces
             $query .= $content;
         }
         //echo $query;
-        if($fetch=($this->connection->query($query))) {
-            if($this->connection->affected_rows>0) {
-                $result=  $this->implodeListDataToListArray($fetch->fetch_all(MYSQLI_ASSOC));
+        try {
+            if ($fetch = ($this->connection->query($query))) {
+                if ($this->connection->affected_rows > 0) {
+                    $result = $this->implodeListDataToListArray($fetch->fetch_all(MYSQLI_ASSOC));
+                    return (
+                    (new RestfulResponse(200, 'Information Fetched Successfully', $result, 1))->expose()
+                    );
+                } else   return (
+                (new RestfulResponse(400, 'Failed to List', $data, 0))->expose()
+                );
+            } else {
                 return (
-                (new RestfulResponse(200, 'Information Fetched Successfully',$result , 1))->expose()
+                (new RestfulResponse(400, 'Failed to List', $data, 0))->expose()
                 );
             }
-            else   return(
-            (new RestfulResponse(400, 'Failed to List',$data,0))->expose()
-            );
-        }
-        else{
-            return(
-            (new RestfulResponse(400, 'Failed to List',$data,0))->expose()
+        } catch (mysqli_sql_exception $e) {
+            return (
+            (new RestfulResponse(400, 'Unable to perform request with error message: ' . $e->getMessage(), $data, 0))->expose()
             );
         }
     }
@@ -124,14 +134,14 @@ class BeereOperations extends Connection  implements BeereInterfaces
     public function delete($table_name, array $data,$logic='&&'):string
     {
         // TODO: Implement delete() method.
-        if (empty($data)) return (new RestfulResponse(400, 'No Data Passed',$data,0))->expose();
+        if (empty($data)) return (new RestfulResponse(400, 'No Data Passed', $data, 0))->expose();
 
         $query = "delete from {$table_name} where ";
         $content = '';
         $count = 0;
         foreach ($data as $key => $value) {
-            $value= is_array($value)?'['.$this->connection->real_escape_string(stripslashes(implode(',',$value))).']':$this->connection->real_escape_string(stripslashes($value));
-            if($value==null) continue;
+            $value = is_array($value) ? '[' . $this->connection->real_escape_string(stripslashes(implode(',', $value))) . ']' : $this->connection->real_escape_string(stripslashes($value));
+            if ($value == null) continue;
             if ($count == 0) {
                 $content .= $key . " = '{$value}' ";
                 ++$count;
@@ -141,15 +151,20 @@ class BeereOperations extends Connection  implements BeereInterfaces
             }
         }
         $query .= $content;
-        $this->connection->query($query);
-        if($this->connection->affected_rows>0) {
-            return(
-            (new RestfulResponse(200, 'Deleted Successfully', $data,1))->expose()
-            );
-        }
-        else{
-            return(
-            (new RestfulResponse(400, 'Failed to Delete', $data,0))->expose()
+        try {
+            $this->connection->query($query);
+            if ($this->connection->affected_rows > 0) {
+                return (
+                (new RestfulResponse(200, 'Deleted Successfully', $data, 1))->expose()
+                );
+            } else {
+                return (
+                (new RestfulResponse(400, 'Failed to Delete', $data, 0))->expose()
+                );
+            }
+        } catch (mysqli_sql_exception $e) {
+            return (
+            (new RestfulResponse(400, 'Unable to perform request with error message: ' . $e->getMessage(), $data, 0))->expose()
             );
         }
     }
@@ -165,28 +180,28 @@ class BeereOperations extends Connection  implements BeereInterfaces
     public function update($table_name, array $data,array $sets,$logic='&&'):string
     {
         // TODO: Implement update() method.
-        if (empty($sets)) return (new RestfulResponse(400, 'No Set Data Passed',$sets,0))->expose();
+        if (empty($sets)) return (new RestfulResponse(400, 'No Set Data Passed', $sets, 0))->expose();
 
         $query = "Update {$table_name} set ";
         $content = '';
         $count = 0;
         foreach ($sets as $key => $set) {
             if ($set === null) continue;
-            $set= is_array($set)?'['.$this->connection->real_escape_string(stripslashes(implode(',',$set))).']':$this->connection->real_escape_string($set);
+            $set = is_array($set) ? '[' . $this->connection->real_escape_string(stripslashes(implode(',', $set))) . ']' : $this->connection->real_escape_string($set);
             if ($count == 0) {
-                $content .=$key."='{$set}'";
+                $content .= $key . "='{$set}'";
                 ++$count;
-            }else{
-                $content .=",".$key."='{$set}'";
+            } else {
+                $content .= "," . $key . "='{$set}'";
                 ++$count;
             }
         }
-        if(!empty($data)) {
+        if (!empty($data)) {
             $content .= " where ";
             $count = 0;
             foreach ($data as $key => $value) {
                 if ($value === null) continue;
-                $value= is_array($value)?'['.$this->connection->real_escape_string(stripslashes(implode(',',$value))).']':$this->connection->real_escape_string(stripslashes($value));
+                $value = is_array($value) ? '[' . $this->connection->real_escape_string(stripslashes(implode(',', $value))) . ']' : $this->connection->real_escape_string(stripslashes($value));
                 if ($count == 0) {
                     $content .= $key . " = '{$value}' ";
                     ++$count;
@@ -197,12 +212,18 @@ class BeereOperations extends Connection  implements BeereInterfaces
             }
         }
         $query .= $content;
-        if($this->connection->query($query)) {
-            return $this->getADataByParam($table_name,$data);
-        }
-        else{
-            return(
-            (new RestfulResponse(400, 'Failed to Update', $data,1))->expose()
+        try {
+            if ($this->connection->query($query)) {
+                return $this->getADataByParam($table_name, $data);
+            } else {
+                return (
+                (new RestfulResponse(400, 'Failed to Update', $data, 1))->expose()
+                );
+            }
+
+        } catch (mysqli_sql_exception $e) {
+            return (
+            (new RestfulResponse(400, 'Unable to perform request with error message: ' . $e->getMessage(), $data, 0))->expose()
             );
         }
     }
@@ -218,51 +239,56 @@ class BeereOperations extends Connection  implements BeereInterfaces
     public function updateAll($table_name, array $data, array $sets,  $logic='&&'):string
     {
         // TODO: Implement update() method.
-        if (empty($sets)) return (new RestfulResponse(400, 'No Set Data Passed',$sets,0))->expose();
+        if (empty($sets)) return (new RestfulResponse(400, 'No Set Data Passed', $sets, 0))->expose();
 
         $query = "Update {$table_name} set ";
         $content = '';
         $count = 0;
         foreach ($sets as $key => $set) {
             if ($set === null) continue;
-            $set= is_array($set)?'['.$this->connection->real_escape_string(stripslashes(implode(',',$set))).']':$this->connection->real_escape_string($set);
+            $set = is_array($set) ? '[' . $this->connection->real_escape_string(stripslashes(implode(',', $set))) . ']' : $this->connection->real_escape_string($set);
             if ($count == 0) {
-                $content .=$key."='{$set}'";
+                $content .= $key . "='{$set}'";
                 ++$count;
-            }else{
-                $content .=",".$key."='{$set}'";
+            } else {
+                $content .= "," . $key . "='{$set}'";
                 ++$count;
             }
         }
-        if(!empty($data)) {
+        if (!empty($data)) {
             $content .= " Where ";
-            $count=0;
+            $count = 0;
             foreach ($data as $key => $value) {
                 if ($value === null) continue;
-                $value= is_array($value)?$this->connection->real_escape_string(stripslashes(implode(',',$value))):$this->connection->real_escape_string($value);
+                $value = is_array($value) ? $this->connection->real_escape_string(stripslashes(implode(',', $value))) : $this->connection->real_escape_string($value);
                 if ($count == 0) {
                     $content .= $key . " in ('{$value}') ";
                     ++$count;
                 } else {
-                    if(strpos($value,',')===false || strrpos($value, ',')===false) $sqlFunction='like';
-                    else $sqlFunction='in';
+                    if (strpos($value, ',') === false || strrpos($value, ',') === false) $sqlFunction = 'like';
+                    else $sqlFunction = 'in';
                     $content .= " {$logic} " . $key . " {$sqlFunction} '{$value}' ";
                     ++$count;
                 }
             }
 
-           /* $whereContent=implode(',',$data);
-            $content.=" id in (".$whereContent.")";*/
+            /* $whereContent=implode(',',$data);
+             $content.=" id in (".$whereContent.")";*/
         }
         $query .= $content;
-        if($this->connection->query($query)) {
-            return(
-            (new RestfulResponse(200, 'Update All data Successfully', $data,1))->expose()
-            );
-        }
-        else{
-            return(
-            (new RestfulResponse(400, 'Failed to Update All data', $data,0))->expose()
+        try {
+            if ($this->connection->query($query)) {
+                return (
+                (new RestfulResponse(200, 'Update All data Successfully', $data, 1))->expose()
+                );
+            } else {
+                return (
+                (new RestfulResponse(400, 'Failed to Update All data', $data, 0))->expose()
+                );
+            }
+        } catch (mysqli_sql_exception $e) {
+            return (
+            (new RestfulResponse(400, 'Unable to perform request with error message: ' . $e->getMessage(), $data, 0))->expose()
             );
         }
     }
@@ -283,7 +309,7 @@ class BeereOperations extends Connection  implements BeereInterfaces
             $content = '';
             $count = 0;
             foreach ($data as $key => $value) {
-                $value= is_array($value)?'['.$this->connection->real_escape_string(stripslashes(implode(',',$value))).']':$this->connection->real_escape_string(stripslashes($value));
+                $value = is_array($value) ? '[' . $this->connection->real_escape_string(stripslashes(implode(',', $value))) . ']' : $this->connection->real_escape_string(stripslashes($value));
                 if ($value == null) continue;
                 if ($count == 0) {
                     $content .= $key . " LIKE '%{$value}%' ";
@@ -295,20 +321,24 @@ class BeereOperations extends Connection  implements BeereInterfaces
             }
             $query .= $content;
         }
-        if($fetch=($this->connection->query($query))) {
-            if ($this->connection->affected_rows > 0){
-                $result=  $this->implodeListDataToListArray($fetch->fetch_all(MYSQLI_ASSOC));
+        try {
+            if ($fetch = ($this->connection->query($query))) {
+                if ($this->connection->affected_rows > 0) {
+                    $result = $this->implodeListDataToListArray($fetch->fetch_all(MYSQLI_ASSOC));
+                    return (
+                    (new RestfulResponse(200, 'Get all Successfully', $result, 1))->expose()
+                    );
+                } else return (
+                (new RestfulResponse(400, 'Failed to get all', $data, 0))->expose()
+                );
+            } else {
                 return (
-                (new RestfulResponse(200, 'Get all Successfully', $result, 1))->expose()
+                (new RestfulResponse(400, 'Encountered fatal error', $data, 0))->expose()
                 );
             }
-            else return(
-            (new RestfulResponse(400, 'Failed to get all', $data,0))->expose()
-            );
-        }
-        else{
-            return(
-            (new RestfulResponse(400, 'Encountered fatal error', $data,0))->expose()
+        } catch (mysqli_sql_exception $e) {
+            return (
+            (new RestfulResponse(400, 'Unable to perform request with error message: ' . $e->getMessage(), $data, 0))->expose()
             );
         }
     }
@@ -322,37 +352,41 @@ class BeereOperations extends Connection  implements BeereInterfaces
     public function getADataByParam($table_name, array $data):string
     {
         // TODO: Implement get() method.
-        if (empty($data)) return (new RestfulResponse(400, 'No Data Passed',$data,0))->expose();
+        if (empty($data)) return (new RestfulResponse(400, 'No Data Passed', $data, 0))->expose();
 
         $query = "Select * from {$table_name} where ";
         $content = '';
         $count = 0;
         foreach ($data as $key => $value) {
-            $value= is_array($value)?'['.$this->connection->real_escape_string(stripslashes(implode(',',$value))).']':$this->connection->real_escape_string(stripslashes($value));
-            if($value==null) continue;
+            $value = is_array($value) ? '[' . $this->connection->real_escape_string(stripslashes(implode(',', $value))) . ']' : $this->connection->real_escape_string(stripslashes($value));
+            if ($value == null) continue;
             if ($count == 0) {
                 $content .= $key . " = '{$value}' ";
                 ++$count;
-            }else {
+            } else {
                 $content .= " && " . $key . " = '{$value}' ";
                 ++$count;
             }
         }
         $query .= $content;
-        if($fetch=($this->connection->query($query))) {
-            if($this->connection->affected_rows>0) {
-                $result = $this->implodeDataToArray($fetch->fetch_assoc());
+        try {
+            if ($fetch = ($this->connection->query($query))) {
+                if ($this->connection->affected_rows > 0) {
+                    $result = $this->implodeDataToArray($fetch->fetch_assoc());
+                    return (
+                    (new RestfulResponse(200, 'Fetched Successfully', $result, 1))->expose()
+                    );
+                } else return (
+                (new RestfulResponse(400, 'Failed to fetched Information', $data, 0))->expose()
+                );
+            } else {
                 return (
-                (new RestfulResponse(200, 'Fetched Successfully', $result, 1))->expose()
+                (new RestfulResponse(400, 'Encountered Error', $data, 0))->expose()
                 );
             }
-            else return(
-            (new RestfulResponse(400, 'Failed to fetched Information', $data,0))->expose()
-            );
-        }
-        else{
-            return(
-            (new RestfulResponse(400, 'Encountered Error', $data,0))->expose()
+        } catch (mysqli_sql_exception $e) {
+            return (
+            (new RestfulResponse(400, 'Unable to perform request with error message: ' . $e->getMessage(), $data, 0))->expose()
             );
         }
     }
@@ -367,14 +401,14 @@ class BeereOperations extends Connection  implements BeereInterfaces
     public function getByRole($table_name, array $data,$logic='&&'):string
     {
         // TODO: Implement get() method.
-        if (empty($data)) return (new RestfulResponse(400, 'No Data Passed',$data,0))->expose();
+        if (empty($data)) return (new RestfulResponse(400, 'No Data Passed', $data, 0))->expose();
 
         $query = "Select * from {$table_name} where ";
         $content = '';
         $count = 0;
         foreach ($data as $value) {
-            if($value==null) continue;
-            $value= is_array($value)?'['.$this->connection->real_escape_string(stripslashes(implode(',',$value))).']':$this->connection->real_escape_string(stripslashes($value));
+            if ($value == null) continue;
+            $value = is_array($value) ? '[' . $this->connection->real_escape_string(stripslashes(implode(',', $value))) . ']' : $this->connection->real_escape_string(stripslashes($value));
             if ($count == 0) {
                 $content .= 'roles' . " LIKE '%{$value}%' ";
                 ++$count;
@@ -384,20 +418,24 @@ class BeereOperations extends Connection  implements BeereInterfaces
             }
         }
         $query .= $content;
-        if($fetch=($this->connection->query($query))) {
-            if ($this->connection->affected_rows > 0){
-                $result=$this->implodeListDataToListArray($fetch->fetch_all(MYSQLI_ASSOC));
+        try {
+            if ($fetch = ($this->connection->query($query))) {
+                if ($this->connection->affected_rows > 0) {
+                    $result = $this->implodeListDataToListArray($fetch->fetch_all(MYSQLI_ASSOC));
+                    return (
+                    (new RestfulResponse(200, 'Fetched by Roles Successfully', $result, 1))->expose()
+                    );
+                } else return (
+                (new RestfulResponse(400, 'Failed to fetch by roles', $data, 0))->expose()
+                );
+            } else {
                 return (
-                (new RestfulResponse(200, 'Fetched by Roles Successfully', $result, 1))->expose()
+                (new RestfulResponse(400, 'Encountered Fatal Error', $data, 0))->expose()
                 );
             }
-            else return(
-            (new RestfulResponse(400, 'Failed to fetch by roles', $data,0))->expose()
-            );
-        }
-        else{
-            return(
-            (new RestfulResponse(400, 'Encountered Fatal Error', $data,0))->expose()
+        } catch (mysqli_sql_exception $e) {
+            return (
+            (new RestfulResponse(400, 'Unable to perform request with error message: ' . $e->getMessage(), $data, 0))->expose()
             );
         }
     }
@@ -413,13 +451,13 @@ class BeereOperations extends Connection  implements BeereInterfaces
     {
         // TODO: Implement validate() method.
         // TODO: Implement get() method.
-        if (empty($data)) return (new RestfulResponse(400, 'No Data Passed',$data,0))->expose();
+        if (empty($data)) return (new RestfulResponse(400, 'No Data Passed', $data, 0))->expose();
 
         $query = "Select * from {$table_name} where ";
         $content = '';
         $count = 0;
         foreach ($data as $key => $value) {
-            $value= is_array($value)?'['.$this->connection->real_escape_string(stripslashes(implode(',',$value))).']':$this->connection->real_escape_string(stripslashes($value));
+            $value = is_array($value) ? '[' . $this->connection->real_escape_string(stripslashes(implode(',', $value))) . ']' : $this->connection->real_escape_string(stripslashes($value));
             if ($value == null) continue;
             if ($count == 0) {
                 $content .= $key . " = '{$value}' ";
@@ -430,20 +468,24 @@ class BeereOperations extends Connection  implements BeereInterfaces
             }
         }
         $query .= $content;
-        if($fetch=($this->connection->query($query))) {
-            if($this->connection->affected_rows>0) {
-                $result = $this->implodeDataToArray($fetch->fetch_assoc());
+        try {
+            if ($fetch = ($this->connection->query($query))) {
+                if ($this->connection->affected_rows > 0) {
+                    $result = $this->implodeDataToArray($fetch->fetch_assoc());
+                    return (
+                    (new RestfulResponse(200, 'Validated Successfully', $result, 1))->expose()
+                    );
+                } else return (
+                (new RestfulResponse(400, 'Failed to Validate', $data, 0))->expose()
+                );
+            } else {
                 return (
-                (new RestfulResponse(200, 'Validated Successfully', $result, 1))->expose()
+                (new RestfulResponse(400, 'Encountered Error while validating', $data, 0))->expose()
                 );
             }
-            else return(
-            (new RestfulResponse(400, 'Failed to Validate', $data,0))->expose()
-            );
-        }
-        else{
-            return(
-            (new RestfulResponse(400, 'Encountered Error while validating', $data,0))->expose()
+        } catch (mysqli_sql_exception $e) {
+            return (
+            (new RestfulResponse(400, 'Unable to perform request with error message: ' . $e->getMessage(), $data, 0))->expose()
             );
         }
     }
@@ -457,30 +499,30 @@ class BeereOperations extends Connection  implements BeereInterfaces
     public function saveMultiple($table_name,array $data):string
     {
 
-        if (empty($data)) return (new RestfulResponse(400, 'No Data Passed',$data,0))->expose();
+        if (empty($data)) return (new RestfulResponse(400, 'No Data Passed', $data, 0))->expose();
 
         // TODO: Implement save() method.
-        $query="insert Ignore  into {$table_name} (";
-        $content='';
-        $count=0;
+        $query = "insert Ignore  into {$table_name} (";
+        $content = '';
+        $count = 0;
         foreach ($data[0] as $key => $value) {
-            $value= is_array($value)?'['.$this->connection->real_escape_string(stripslashes(implode(',',$value))).']':$this->connection->real_escape_string(stripslashes($value));
-            if($value==null) continue;
-            if($count==0) {
-                $content .=$key;
+            $value = is_array($value) ? '[' . $this->connection->real_escape_string(stripslashes(implode(',', $value))) . ']' : $this->connection->real_escape_string(stripslashes($value));
+            if ($value == null) continue;
+            if ($count == 0) {
+                $content .= $key;
                 ++$count;
-            }else{
-                $content.=",{$key}";
+            } else {
+                $content .= ",{$key}";
                 ++$count;
             }
         }
-        $content.=") values(";
-        $lastDataIndex=0;
-        $dataLen=count($data);
-        foreach($data as $k=>$item) {
-            $count=0;
+        $content .= ") values(";
+        $lastDataIndex = 0;
+        $dataLen = count($data);
+        foreach ($data as $k => $item) {
+            $count = 0;
             foreach ($item as $key => $value) {
-                $value= is_array($value)?'['.$this->connection->real_escape_string(stripslashes(implode(',',$value))).']':$this->connection->real_escape_string(stripslashes($value));
+                $value = is_array($value) ? '[' . $this->connection->real_escape_string(stripslashes(implode(',', $value))) . ']' : $this->connection->real_escape_string(stripslashes($value));
                 if ($value == null) continue;
                 if ($count == 0) {
                     $content .= "'{$value}'";
@@ -490,26 +532,35 @@ class BeereOperations extends Connection  implements BeereInterfaces
                     ++$count;
                 }
             }
-            if($dataLen==1) { $content.=")"; break;}
-            if($dataLen-1>$lastDataIndex)  $content .= "),(";
-            if($dataLen-1==$lastDataIndex) $content.=")";
+            if ($dataLen == 1) {
+                $content .= ")";
+                break;
+            }
+            if ($dataLen - 1 > $lastDataIndex) $content .= "),(";
+            if ($dataLen - 1 == $lastDataIndex) $content .= ")";
 
             $lastDataIndex++;
         }
-        $query.=$content;
+        $query .= $content;
         //echo $query;
         //return;
-        if($this->connection->query($query) && $this->connection->affected_rows>0){
-            if(isset($data[0]['key_fetch']))
-                return $this->list($table_name, array('key_fetch'=>$data[0]['key_fetch']),'||');
-            else
-                return(
-                (new RestfulResponse(200, 'Multiple Data Saved Successfully',$data,1))->expose()
-                );
+        try {
+            if ($this->connection->query($query) && $this->connection->affected_rows > 0) {
+                if (isset($data[0]['key_fetch']))
+                    return $this->list($table_name, array('key_fetch' => $data[0]['key_fetch']), '||');
+                else
+                    return (
+                    (new RestfulResponse(200, 'Multiple Data Saved Successfully', $data, 1))->expose()
+                    );
 
-        }else{
-            return(
-            (new RestfulResponse(400, 'Failed to Save',$data,0))->expose()
+            } else {
+                return (
+                (new RestfulResponse(400, 'Failed to Save', $data, 0))->expose()
+                );
+            }
+        } catch (mysqli_sql_exception $e) {
+            return (
+            (new RestfulResponse(400, 'Unable to perform request with error message: ' . $e->getMessage(), $data, 0))->expose()
             );
         }
     }
@@ -526,16 +577,16 @@ class BeereOperations extends Connection  implements BeereInterfaces
     public function listByLimit($table_name,array $data,$logic='&&',$page=1,$limit=200):string
     {
         // TODO: Implement list() method.
-        $page=(int)$page;
-        $total=0;
-        if($page==1) {
+        $page = (int)$page;
+        $total = 0;
+        if ($page == 1) {
             $getTotal = "Select COUNT(DISTINCT id) as totalLength from {$table_name}";
-            if (!empty($data)){
+            if (!empty($data)) {
                 $getTotal = "Select COUNT(DISTINCT id) as totalLength from {$table_name} where ";
                 $content = '';
                 $count = 0;
                 foreach ($data as $key => $value) {
-                    $value= is_array($value)?'['.$this->connection->real_escape_string(stripslashes(implode(',',$value))).']':$this->connection->real_escape_string(stripslashes($value));
+                    $value = is_array($value) ? '[' . $this->connection->real_escape_string(stripslashes(implode(',', $value))) . ']' : $this->connection->real_escape_string(stripslashes($value));
                     if ($value == null) continue;
                     if ($count == 0) {
                         $content .= $key . " LIKE '%{$value}%' ";
@@ -548,16 +599,16 @@ class BeereOperations extends Connection  implements BeereInterfaces
                 $getTotal .= $content;
             }
             $myTotal = $this->connection->query($getTotal);
-            $total=(int)($myTotal->fetch_assoc()['totalLength']);
+            $total = (int)($myTotal->fetch_assoc()['totalLength']);
         }
-        $offset=($page-1)*$limit;
+        $offset = ($page - 1) * $limit;
         $query = "Select * from {$table_name} LIMIT {$limit}  OFFSET {$offset} ";
-        if (!empty($data)){
+        if (!empty($data)) {
             $query = "Select * from {$table_name} where ";
             $content = '';
             $count = 0;
             foreach ($data as $key => $value) {
-                $value= is_array($value)?'['.$this->connection->real_escape_string(stripslashes(implode(',',$value))).']':$this->connection->real_escape_string(stripslashes($value));
+                $value = is_array($value) ? '[' . $this->connection->real_escape_string(stripslashes(implode(',', $value))) . ']' : $this->connection->real_escape_string(stripslashes($value));
                 if ($value == null) continue;
                 if ($count == 0) {
                     $content .= $key . " LIKE '%{$value}%' ";
@@ -567,32 +618,36 @@ class BeereOperations extends Connection  implements BeereInterfaces
                     ++$count;
                 }
             }
-            $content.=" LIMIT {$limit}  OFFSET {$offset} ";
+            $content .= " LIMIT {$limit}  OFFSET {$offset} ";
             $query .= $content;
         }
         //echo $query; return;
-        if($fetch=($this->connection->query($query))) {
-            if($this->connection->affected_rows>0) {
-                $result=  $this->implodeListDataToListArray($fetch->fetch_all(MYSQLI_ASSOC));
-                //print_r($total);
-                if($page==1) {
+        try {
+            if ($fetch = ($this->connection->query($query))) {
+                if ($this->connection->affected_rows > 0) {
+                    $result = $this->implodeListDataToListArray($fetch->fetch_all(MYSQLI_ASSOC));
+                    //print_r($total);
+                    if ($page == 1) {
+                        return (
+                        (new RestfulResponse(200, 'Information Fetched Successfully', $result, 1, $total))->expose());
+                    } else {
+                        return ((new RestfulResponse(200, 'Information Fetched Successfully', $result, 1))->expose());
+                    }
+                } else {
+                    $data = array(0);
                     return (
-                    (new RestfulResponse(200, 'Information Fetched Successfully', $result, 1, $total))->expose());
-                }else{
-                    return  ((new RestfulResponse(200, 'Information Fetched Successfully', $result, 1))->expose());
+                    (new RestfulResponse(400, 'Failed to List', $data, 0))->expose()
+                    );
                 }
-            }
-            else {
-                $data=array(0);
+            } else {
+                $data = array(0);
                 return (
                 (new RestfulResponse(400, 'Failed to List', $data, 0))->expose()
                 );
             }
-        }
-        else{
-            $data=array(0);
-            return(
-            (new RestfulResponse(400, 'Failed to List',$data,0))->expose()
+        } catch (mysqli_sql_exception $e) {
+            return (
+            (new RestfulResponse(400, 'Unable to perform request with error message: ' . $e->getMessage(), $data, 0))->expose()
             );
         }
     }
@@ -607,12 +662,12 @@ class BeereOperations extends Connection  implements BeereInterfaces
     public function getLastIndex($table_name,array $data,$logic='&&'):string
     {
         $query = "Select * from {$table_name} ORDER BY id DESC LIMIT 1 ";
-        if (!empty($data)){
+        if (!empty($data)) {
             $query = "Select * from {$table_name} where ";
             $content = '';
             $count = 0;
             foreach ($data as $key => $value) {
-                $value= is_array($value)?'['.$this->connection->real_escape_string(stripslashes(implode(',',$value))).']':$this->connection->real_escape_string(stripslashes($value));
+                $value = is_array($value) ? '[' . $this->connection->real_escape_string(stripslashes(implode(',', $value))) . ']' : $this->connection->real_escape_string(stripslashes($value));
                 if ($value == null) continue;
                 if ($count == 0) {
                     $content .= $key . " = '{$value}' ";
@@ -623,19 +678,24 @@ class BeereOperations extends Connection  implements BeereInterfaces
                 }
             }
             $query .= $content;
-            $query.=" ORDER BY id  DESC LIMIT 1";
+            $query .= " ORDER BY id  DESC LIMIT 1";
         }
-        if($fetch=($this->connection->query($query))) {
-            $result = $this->implodeDataToArray($fetch->fetch_assoc());
-            if(empty($result)) $result=array();
+        try {
+            if ($fetch = ($this->connection->query($query))) {
+                $result = $this->implodeDataToArray($fetch->fetch_assoc());
+                if (empty($result)) $result = array();
+                return (
+                (new RestfulResponse(200, 'Last Index data fetched successfully', $result, 0))->expose()
+                );
+            } else {
+                $result = array();
+                return (
+                (new RestfulResponse(400, 'Encountered Error while getting last index data', $result, 0))->expose()
+                );
+            }
+        } catch (mysqli_sql_exception $e) {
             return (
-            (new RestfulResponse(200, 'Last Index data fetched successfully', $result, 0))->expose()
-            );
-        }
-        else{
-            $result=array();
-            return(
-            (new RestfulResponse(400, 'Encountered Error while getting last index data', $result,0))->expose()
+            (new RestfulResponse(400, 'Unable to perform request with error message: ' . $e->getMessage(), $data, 0))->expose()
             );
         }
     }
@@ -645,20 +705,20 @@ class BeereOperations extends Connection  implements BeereInterfaces
      * @param array $data
      * @param string $logic
      * @return string
-     * This is used to perform count operation
+     * This is used to perform count operation on table based on $data supplied
      *
      */
     public function countByParam($table_name,array $data,$logic='&&'):string
     {
         // TODO: Implement count() method.
-        $result=array();
+        $result = array();
         $getTotal = "Select COUNT(DISTINCT id) as totalLength from {$table_name}";
-        if (!empty($data)){
+        if (!empty($data)) {
             $getTotal = "Select COUNT(DISTINCT id) as totalLength from {$table_name} where ";
             $content = '';
             $count = 0;
             foreach ($data as $key => $value) {
-                $value= is_array($value)?'['.$this->connection->real_escape_string(stripslashes(implode(',',$value))).']':$this->connection->real_escape_string(stripslashes($value));
+                $value = is_array($value) ? '[' . $this->connection->real_escape_string(stripslashes(implode(',', $value))) . ']' : $this->connection->real_escape_string(stripslashes($value));
                 if ($value == null) continue;
                 if ($count == 0) {
                     $content .= $key . " = '{$value}' ";
@@ -671,16 +731,21 @@ class BeereOperations extends Connection  implements BeereInterfaces
             $getTotal .= $content;
         }
         // echo $getTotal;
-        if($myTotal = $this->connection->query($getTotal)) {
-            $total=(int)($myTotal->fetch_assoc()['totalLength']);
-            $result[] = $total;
+        try {
+            if ($myTotal = $this->connection->query($getTotal)) {
+                $total = (int)($myTotal->fetch_assoc()['totalLength']);
+                $result[] = $total;
+                return (
+                (new RestfulResponse(200, 'Count Successfully', $result, 1))->expose());
+            } else {
+                $data = array(0);
+                return (
+                (new RestfulResponse(400, 'Failed to Count', $data, 0))->expose()
+                );
+            }
+        } catch (mysqli_sql_exception $e) {
             return (
-            (new RestfulResponse(200, 'Count Successful', $result, 1))->expose());
-        }
-        else{
-            $data=array(0);
-            return(
-            (new RestfulResponse(400, 'Failed to List',$data,0))->expose()
+            (new RestfulResponse(400, 'Unable to perform request with error message: ' . $e->getMessage(), $data, 0))->expose()
             );
         }
     }
