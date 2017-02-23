@@ -16,5 +16,5 @@
             "url": "https://github.com/Procaseycash/beere"
         }
     ],
-    "require": {}
+    "require": {"kazeemola/beere":"1.0"}
 }
