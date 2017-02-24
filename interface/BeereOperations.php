@@ -280,7 +280,6 @@ class BeereOperations extends Connection  implements BeereInterfaces
                     ++$count;
                 }
             }
-
             /* $whereContent=implode(',',$data);
              $content.=" id in (".$whereContent.")";*/
         }
