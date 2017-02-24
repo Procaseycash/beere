@@ -262,12 +262,16 @@ class BeereOperations extends Connection  implements BeereInterfaces
                 if ($value === null) continue;
                 $value = is_array($value) ? $this->connection->real_escape_string(stripslashes(implode(',', $value))) : $this->connection->real_escape_string($value);
                 if ($count == 0) {
-                    $content .= $key . " in ('{$value}') ";
+                    $content .= $key . " in ({$value}) ";
                     ++$count;
                 } else {
-                    if (strpos($value, ',') === false || strrpos($value, ',') === false) $sqlFunction = 'like';
-                    else $sqlFunction = 'in';
-                    $content .= " {$logic} " . $key . " {$sqlFunction} '{$value}' ";
+                    if (strpos($value, ',') === false || strrpos($value, ',') === false) {
+                        $sqlFunction = '=';
+                        $content .= " {$logic} " . $key . " {$sqlFunction} '{$value}' ";
+                    } else {
+                        $sqlFunction = 'in';
+                        $content .= " {$logic} " . $key . " {$sqlFunction} ({$value}) ";
+                    }
                     ++$count;
                 }
             }
