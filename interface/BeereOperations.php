@@ -320,9 +320,15 @@ class BeereOperations extends Connection  implements BeereInterfaces
                 $value = is_array($value) ? '[' . $this->connection->real_escape_string(stripslashes(implode(',', $value))) . ']' : $this->connection->real_escape_string(stripslashes($value));
                 if ($value == null) continue;
                 if ($count == 0) {
-                    $content .= $key . " LIKE '%{$value}%' ";
+                    if($key=='id')
+                    $content .= $key . " = '{$value}' ";
+                else
+                   $content .= $key . " LIKE '%{$value}%' "; 
                     ++$count;
                 } else {
+                       if($key=='id')
+                    $content .= " {$logic} " . $key . " = '{$value}' ";
+                else    
                     $content .= " {$logic} " . $key . " LIKE '%{$value}%' ";
                     ++$count;
                 }
@@ -597,10 +603,16 @@ class BeereOperations extends Connection  implements BeereInterfaces
                     $value = is_array($value) ? '[' . $this->connection->real_escape_string(stripslashes(implode(',', $value))) . ']' : $this->connection->real_escape_string(stripslashes($value));
                     if ($value == null) continue;
                     if ($count == 0) {
-                        $content .= $key . " LIKE '%{$value}%' ";
+                        if($key=='id')
+                            $content .= $key . " = '{$value}' ";
+                        else
+                            $content .= $key . " LIKE '%{$value}%' ";
                         ++$count;
                     } else {
-                        $content .= " {$logic} " . $key . " LIKE '%{$value}%' ";
+                        if($key=='id')
+                            $content .= " {$logic} " . $key . " = '{$value}' ";
+                        else
+                            $content .= " {$logic} " . $key . " LIKE '%{$value}%' ";
                         ++$count;
                     }
                 }
@@ -618,10 +630,16 @@ class BeereOperations extends Connection  implements BeereInterfaces
             foreach ($data as $key => $value) {
                 $value = is_array($value) ? '[' . $this->connection->real_escape_string(stripslashes(implode(',', $value))) . ']' : $this->connection->real_escape_string(stripslashes($value));
                 if ($value == null) continue;
-                if ($count == 0) {
-                    $content .= $key . " LIKE '%{$value}%' ";
+               if ($count == 0) {
+                    if($key=='id')
+                    $content .= $key . " = '{$value}' ";
+                else
+                   $content .= $key . " LIKE '%{$value}%' "; 
                     ++$count;
                 } else {
+                       if($key=='id')
+                    $content .= " {$logic} " . $key . " = '{$value}' ";
+                else    
                     $content .= " {$logic} " . $key . " LIKE '%{$value}%' ";
                     ++$count;
                 }
