@@ -213,7 +213,7 @@ class BeereOperations extends Connection  implements BeereInterfaces
         }
         $query .= $content;
         try {
-            if ($this->connection->query($query)) {
+            if ($this->connection->query($query) && $this->connection->affected_rows>0) {
                 return $this->getADataByParam($table_name, $data);
             } else {
                 return (
@@ -285,7 +285,7 @@ class BeereOperations extends Connection  implements BeereInterfaces
         }
         $query .= $content;
         try {
-            if ($this->connection->query($query)) {
+            if ($this->connection->query($query) && $this->connection->affected_rows>0) {
                 return (
                 (new RestfulResponse(200, 'Update All data Successfully', $data, 1))->expose()
                 );
@@ -708,11 +708,18 @@ class BeereOperations extends Connection  implements BeereInterfaces
         }
         try {
             if ($fetch = ($this->connection->query($query))) {
+                if($this->connection->affected_rows>0){
                 $result = $this->implodeDataToArray($fetch->fetch_assoc());
                 if (empty($result)) $result = array();
                 return (
                 (new RestfulResponse(200, 'Last Index data fetched successfully', $result, 0))->expose()
                 );
+            } else {
+                $result = array();
+                return (
+                (new RestfulResponse(400, 'No data', $result, 0))->expose()
+                );
+            }
             } else {
                 $result = array();
                 return (
@@ -759,10 +766,17 @@ class BeereOperations extends Connection  implements BeereInterfaces
         // echo $getTotal;
         try {
             if ($myTotal = $this->connection->query($getTotal)) {
+                if($this->connection->affected_rows>0){
                 $total = (int)($myTotal->fetch_assoc()['totalLength']);
                 $result[] = $total;
                 return (
                 (new RestfulResponse(200, 'Count Successfully', $result, 1))->expose());
+            } else {
+                $data = array(0);
+                return (
+                (new RestfulResponse(400, 'Failed to Count', $data, 0))->expose()
+                );
+            }
             } else {
                 $data = array(0);
                 return (
