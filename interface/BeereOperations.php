@@ -313,7 +313,7 @@ class BeereOperations extends Connection  implements BeereInterfaces
      */
     public function getAll($table_name, array $data,$logic='&&',array $fields=['*']):string
     {
-        // TODO: Implement list() method.
+        // TODO: Implement getAll() method.
         $fields=$this->implodeFields($fields);
         $query = "Select {$fields} from {$table_name}";
         if (!empty($data)) {
@@ -370,7 +370,7 @@ class BeereOperations extends Connection  implements BeereInterfaces
      */
     public function getADataByParam($table_name, array $data,array $fields=['*']):string
     {
-        // TODO: Implement list() method.
+        // TODO: Implement getADataByParam() method.
         $fields=$this->implodeFields($fields);
 
         if (empty($data)) return (new RestfulResponse(400, 'No Data Passed', $data, 0))->expose();
