@@ -1,5 +1,6 @@
 {
     "name": "kazeemola/beere",
+    "version": "1.0.0",
     "description": "PHP Database Query with Restful json response",
     "type": "library",
     "require": {
