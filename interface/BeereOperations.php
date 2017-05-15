@@ -77,15 +77,17 @@ class BeereOperations extends Connection  implements BeereInterfaces
      * @param $table_name
      * @param $data
      * @param $logic
+     * @param $fields
      * @return string
      * This is used to list all datas
      */
-    public function list($table_name, array $data,$logic='&&'):string
+    public function list($table_name, array $data,$logic='&&',array $fields=['*']):string
     {
         // TODO: Implement list() method.
-        $query = "Select * from {$table_name}";
+        $fields=$this->implodeFields($fields);
+        $query = "Select {$fields} from {$table_name}";
         if (!empty($data)) {
-            $query = "Select * from {$table_name} where ";
+            $query = "Select {$fields}  from {$table_name} where ";
             $content = '';
             $count = 0;
             foreach ($data as $key => $value) {
@@ -305,15 +307,17 @@ class BeereOperations extends Connection  implements BeereInterfaces
      * @param $table_name
      * @param $data
      * @param $logic
+     * @param $fields
      * @return string
      * This is used to list any related data searched for.
      */
-    public function getAll($table_name, array $data,$logic='&&'):string
+    public function getAll($table_name, array $data,$logic='&&',array $fields=['*']):string
     {
-        // TODO: Implement get() method.
-        $query = "Select * from {$table_name}";
+        // TODO: Implement list() method.
+        $fields=$this->implodeFields($fields);
+        $query = "Select {$fields} from {$table_name}";
         if (!empty($data)) {
-            $query = "Select * from {$table_name} where ";
+            $query = "Select {$fields}  from {$table_name} where ";
             $content = '';
             $count = 0;
             foreach ($data as $key => $value) {
@@ -360,15 +364,18 @@ class BeereOperations extends Connection  implements BeereInterfaces
     /**
      * @param $table_name
      * @param $data
+     * @param $fields
      * @return string
      * This is used to get data by single value passed
      */
-    public function getADataByParam($table_name, array $data):string
+    public function getADataByParam($table_name, array $data,array $fields=['*']):string
     {
-        // TODO: Implement get() method.
+        // TODO: Implement list() method.
+        $fields=$this->implodeFields($fields);
+
         if (empty($data)) return (new RestfulResponse(400, 'No Data Passed', $data, 0))->expose();
 
-        $query = "Select * from {$table_name} where ";
+        $query = "Select {$fields} from {$table_name} where ";
         $content = '';
         $count = 0;
         foreach ($data as $key => $value) {
@@ -409,15 +416,17 @@ class BeereOperations extends Connection  implements BeereInterfaces
      * @param $table_name
      * @param $data
      * @param $logic
+     * @param $fields
      * @return string
      * This is used to get users based on role passed
      */
-    public function getByRole($table_name, array $data,$logic='&&'):string
+    public function getByRole($table_name, array $data,$logic='&&',array $fields=['*']):string
     {
-        // TODO: Implement get() method.
+        // TODO: Implement getByRole() method.
+        $fields=$this->implodeFields($fields);
         if (empty($data)) return (new RestfulResponse(400, 'No Data Passed', $data, 0))->expose();
 
-        $query = "Select * from {$table_name} where ";
+        $query = "Select {$fields} from {$table_name} where ";
         $content = '';
         $count = 0;
         foreach ($data as $value) {
@@ -458,16 +467,17 @@ class BeereOperations extends Connection  implements BeereInterfaces
      * @param $table_name
      * @param $data
      * @param $logic
+     * @param $fields
      * @return string
      * This is used to validate the existence of a user by return its object
      */
-    public function validate($table_name, array $data, $logic='&&'):string
+    public function validate($table_name, array $data, $logic='&&',array $fields=['*']):string
     {
         // TODO: Implement validate() method.
-        // TODO: Implement get() method.
+        $fields=$this->implodeFields($fields);
         if (empty($data)) return (new RestfulResponse(400, 'No Data Passed', $data, 0))->expose();
 
-        $query = "Select * from {$table_name} where ";
+        $query = "Select {$fields} from {$table_name} where ";
         $content = '';
         $count = 0;
         foreach ($data as $key => $value) {
@@ -512,7 +522,7 @@ class BeereOperations extends Connection  implements BeereInterfaces
      */
     public function saveMultiple($table_name,array $data):string
     {
-
+        // TODO: Implement saveMultiple() method.
         if (empty($data)) return (new RestfulResponse(400, 'No Data Passed', $data, 0))->expose();
 
         // TODO: Implement save() method.
@@ -585,12 +595,14 @@ class BeereOperations extends Connection  implements BeereInterfaces
      * @param $logic
      * @param $page
      * @param int $limit
+     * @param $fields
      * @return string
      * This is used to list data based on speculated limit with offset and condition passed
      */
-    public function listByLimit($table_name,array $data,$logic='&&',$page=1,$limit=200):string
+    public function listByLimit($table_name,array $data,$logic='&&',$page=1,$limit=200,array $fields=['*']):string
     {
-        // TODO: Implement list() method.
+        // TODO: Implement listByLimit() method.
+        $fields=$this->implodeFields($fields);
         $page = (int)$page;
         $total = 0;
         if ($page == 1) {
@@ -622,9 +634,9 @@ class BeereOperations extends Connection  implements BeereInterfaces
             $total = (int)($myTotal->fetch_assoc()['totalLength']);
         }
         $offset = ($page - 1) * $limit;
-        $query = "Select * from {$table_name} LIMIT {$limit}  OFFSET {$offset} ";
+        $query = "Select {$fields} from {$table_name} LIMIT {$limit}  OFFSET {$offset} ";
         if (!empty($data)) {
-            $query = "Select * from {$table_name} where ";
+            $query = "Select {$fields} from {$table_name} where ";
             $content = '';
             $count = 0;
             foreach ($data as $key => $value) {
@@ -678,18 +690,20 @@ class BeereOperations extends Connection  implements BeereInterfaces
         }
     }
 
-
     /**
      * @param $table_name
      * @param $data
      * @param $logic
+     * @param $fields
      * @return string
      */
-    public function getLastIndex($table_name,array $data,$logic='&&'):string
+    public function getLastIndex($table_name,array $data,$logic='&&',array $fields=['*']):string
     {
-        $query = "Select * from {$table_name} ORDER BY id DESC LIMIT 1 ";
+        // TODO: Implement getLastIndex() method.
+        $fields=$this->implodeFields($fields);
+        $query = "Select {$fields} from {$table_name} ORDER BY id DESC LIMIT 1 ";
         if (!empty($data)) {
-            $query = "Select * from {$table_name} where ";
+            $query = "Select {$fields} from {$table_name} where ";
             $content = '';
             $count = 0;
             foreach ($data as $key => $value) {
@@ -829,5 +843,14 @@ class BeereOperations extends Connection  implements BeereInterfaces
             }
         }
         return $data;
+    }
+
+    /**
+     * @param array $fields
+     * @return string
+     * This is used to convert array to string
+     */
+    public function implodeFields(array $fields):string{
+        return implode(',',$fields);
     }
 }

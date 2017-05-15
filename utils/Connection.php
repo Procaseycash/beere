@@ -14,7 +14,7 @@ protected $connection;
         'DATABASE_NAME'=>'zeus',
         'HOST'=>'localhost',
         'USER'=>'root',
-        'PASSWORD'=>'mysql001'
+        'PASSWORD'=>''
     );
 
     const CONFIG_ONLINE=array(

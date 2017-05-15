@@ -65,12 +65,12 @@ function listUser(){
 $list=new BeereOperations();
  //to list all, pass empty array, while to list based on some data, pass array of data.
     $data=array();
-    $res=$list->list('user', $data);
-    print_r(json_decode($res,true));
+    //$res=$list->list('user', $data);
+   // print_r(json_decode($res,true));
     //You pass a single conditional operator such as AND etc as 3rd parameter in update method, default is AND
     echo "<br>";echo "<br>";
     echo"<b>List Data using Parameter(s)</b>"."<br>";echo "<br>";
-    $data=array('id'=>'%%%%%' );
+    $data=array('id'=>'6' );
     $res=$list->list('user', $data);
     print_r(json_decode($res,true));
 }
@@ -144,7 +144,7 @@ function listByLimitPager(){
     $logic='&&'; //default is AND.
     while($page<3) {
         echo" List ".$page.'<br>';
-        $res=$val->listByLimit('user', array(), $logic, $page, $limit);
+        $res=$val->listByLimit('user', array(), $logic, $page, $limit,['first_name']);
         print_r(json_decode($res, true)); //convert json back to array
         echo "<br><br>";
         $page++;
@@ -164,9 +164,9 @@ function deleteUser(){
 //Call Functions
 //saveUser();
 //updateUser();
-listUser();
+//listUser();
 //validateUser();
 //getData();
 //saveUsingMultiple();
-//listByLimitPager();
+listByLimitPager();
 //deleteUser();
