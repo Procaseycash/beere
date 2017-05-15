@@ -1,0 +1,29 @@
+{
+  "name": "beere",
+  "version": "1.0.0",
+  "description": "PHP Database Query with Restful json response",
+  "main": "index.js",
+  "directories": {
+    "example": "example"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://gitlab.com/procaseycash/beere.git"
+  },
+  "keywords": [
+    "Json",
+    "CRUD",
+    "DB",
+    "Query",
+    "Restful"
+  ],
+  "author": "Kazeem Olanipekun <kezyolanipekun@gmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://gitlab.com/procaseycash/beere/issues"
+  },
+  "homepage": "https://gitlab.com/procaseycash/beere#README"
+}

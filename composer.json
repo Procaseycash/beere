@@ -1,0 +1,16 @@
+{
+    "name": "kazeemola/beere",
+    "description": "PHP Database Query with Restful json response",
+    "type": "library",
+    "require": {
+        "php": "^7.1"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "KazeemOla",
+            "email": "kezyolanipekun@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable"
+}
