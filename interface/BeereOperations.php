@@ -34,30 +34,22 @@ class BeereOperations extends Connection implements BeereInterfaces
         $query = "insert Ignore into {$table_name} (";
         $content = '';
         $count = 0;
+        $passValues=" ";
         foreach ($data as $key => $value) {
             $value = is_array($value) ? '[' . $this->connection->real_escape_string(stripslashes(implode(',', $value))) . ']' : $this->connection->real_escape_string(stripslashes($value));
             if ($value == null) continue;
             if ($count == 0) {
                 $content .= $key;
+                $passValues.= "'{$value}'";
                 ++$count;
             } else {
                 $content .= ",{$key}";
+                $passValues .= ",'{$value}'";
                 ++$count;
             }
         }
         $content .= ") values(";
-        $count = 0;
-        foreach ($data as $key => $value) {
-            $value = is_array($value) ? '[' . $this->connection->real_escape_string(stripslashes(implode(',', $value))) . ']' : $this->connection->real_escape_string(stripslashes($value));
-            if ($value == null) continue;
-            if ($count == 0) {
-                $content .= "'{$value}'";
-                ++$count;
-            } else {
-                $content .= ",'{$value}'";
-                ++$count;
-            }
-        }
+        $content.=" ".$passValues." ";
         $content .= ")";
         $query .= $content;
         //  echo $query;
