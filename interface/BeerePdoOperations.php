@@ -256,7 +256,7 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
      * @param array $sets
      * @param string $logic
      * @return string
-     * This is used to update multiple data and return list of updated data synchronously
+     * This is used to update multiple data and return list of updated data asynchronously --DONE
      */
     public function updateAll($table_name, array $data, array $sets,  $logic='&&'):string
     {
@@ -266,14 +266,17 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
         $query = "Update {$table_name} set ";
         $content = '';
         $count = 0;
+        $params =[];
         foreach ($sets as $key => $set) {
             if ($set === null) continue;
             $set = is_array($set) ? '[' . (stripslashes(implode(',', $set))) . ']' : ($set);
             if ($count == 0) {
-                $content .= $key . "='{$set}'";
+                $content .= $key . "= ?";
+                $params[] = $set;
                 ++$count;
             } else {
-                $content .= "," . $key . "='{$set}'";
+                $content .= "," . $key . "= ?";
+                $params[] = $set;
                 ++$count;
             }
         }
@@ -282,22 +285,31 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
             $count = 0;
             foreach ($data as $key => $value) {
                 if ($value === null) continue;
+                $in=[];
                 $ops=is_array($value)?1:0; // denote if array to use in operator
-                $value = is_array($value) ? (stripslashes(implode(',', $value))) : ($value);
+                if(is_array($value)) {
+                  foreach ($value as $item){
+                      $params[] = $item;
+                      $in[] = '?';
+                  }
+                }
                 if ($count == 0) {
                     if ($ops==0) {
-                        $content .= $key . " like '{$value}' ";
+                        $content .= $key . " like ? ";
+                        $params[] = $value;
                     }
                     else {
-                        $content .= $key . " in ({$value}) ";
+                        $in = implode(',',$in);
+                        $content .= $key . " in ({$in}) ";
                     }
                     ++$count;
                 } else {
                     if ($ops==0) {
-                        $content .= " {$logic} " . $key . " like '{$value}' ";
+                        $content .= " {$logic} " . $key . " like ? ";
                     }
                     else {
-                        $content .= " {$logic} " . $key . " in ({$value}) ";
+                        $in = implode(',',$in);
+                        $content .= " {$logic} " . $key . " in ({$in}) ";
                     }
                     ++$count;
                 }
@@ -307,7 +319,9 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
         }
         $query .= $content;
         try {
-            if ($this->connection->query($query) && $this->connection->affected_rows>0) {
+            $statement = $this->connection->prepare($query);
+            $statement->execute($params);
+            if ($statement->rowCount()>0) {
                 return (
                 (new RestfulResponse(200, 'Update All data Successfully', $data, 1))->expose()
                 );
@@ -340,40 +354,42 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
             $query = "Select {$fields}  from {$table_name} where ";
             $content = '';
             $count = 0;
+            $params = [];
             foreach ($data as $key => $value) {
                 $value = is_array($value) ? '[' . (stripslashes(implode(',', $value))) . ']' : (stripslashes($value));
                 if ($value == null) continue;
                 if ($count == 0) {
-                    if($key=='id' || strpos($key,'_id')!==false)
-                    $content .= $key . " = '{$value}' ";
-                else
-                   $content .= $key . " LIKE '%{$value}%' "; 
-                    ++$count;
+                        if($key=='id' || strpos($key,'_id')!==false)
+                        $content .= $key . " = ?  ";
+                        else {
+                            $content .= $key . " LIKE %?% ";
+                        }
+                        $params[] = $value;
+                        ++$count;
                 } else {
-                       if($key=='id' || strpos($key,'_id')!==false)
-                    $content .= " {$logic} " . $key . " = '{$value}' ";
-                else    
-                    $content .= " {$logic} " . $key . " LIKE '%{$value}%' ";
-                    ++$count;
+                        if($key=='id' || strpos($key,'_id')!==false)
+                            $content .= " {$logic} " . $key . " = ? ";
+                        else {
+                            $content .= " {$logic} " . $key . " LIKE %?% ";
+                        }
+                        $params[] = $value;
+                        ++$count;
                 }
             }
-            $query .= $content;
+           echo $query .= $content; echo"<br>";
+           print_r($params);  echo"<br>";
         }
         try {
-            if ($fetch = ($this->connection->query($query))) {
-                if ($this->connection->affected_rows > 0) {
-                    $result = $this->implodeListDataToListArray($fetch->fetch_all(MYSQLI_ASSOC));
+                $statement= $this->connection->prepare($query);
+                $statement->execute([5]);
+                if ($statement->rowCount() > 0) {
+                    $result = $this->implodeListDataToListArray($statement->fetchAll(PDO::FETCH_ASSOC));
                     return (
                     (new RestfulResponse(200, 'Get all Successfully', $result, 1))->expose()
                     );
                 } else return (
                 (new RestfulResponse(400, 'Failed to get all', $data, 0))->expose()
                 );
-            } else {
-                return (
-                (new RestfulResponse(400, 'Encountered fatal error', $data, 0))->expose()
-                );
-            }
         } catch (PDOException $e) {
             return (
             (new RestfulResponse(400, 'Unable to perform request with error message: ' . $e->getMessage(), $data, 0))->expose()
@@ -488,7 +504,7 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
      * @param $logic
      * @param $fields
      * @return string
-     * This is used to validate the existence of a user by return its object
+     * This is used to validate the existence of a user by return its object --DONE
      */
     public function validate($table_name, array $data, $logic='&&',array $fields=['*']):string
     {
@@ -499,33 +515,33 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
         $query = "Select {$fields} from {$table_name} where ";
         $content = '';
         $count = 0;
+        $params= [];
         foreach ($data as $key => $value) {
             $value = is_array($value) ? '[' . (stripslashes(implode(',', $value))) . ']' : (stripslashes($value));
             if ($value == null) continue;
             if ($count == 0) {
-                $content .= $key . " = '{$value}' ";
+                $content .= $key . " = ? ";
+                $params[] = $value;
                 ++$count;
             } else {
-                $content .= " {$logic} " . $key . " = '{$value}' ";
+                $content .= " {$logic} " . $key . " = ? ";
+                $params[] = $value;
                 ++$count;
             }
         }
         $query .= $content;
         try {
-            if ($fetch = ($this->connection->query($query))) {
-                if ($this->connection->affected_rows > 0) {
-                    $result = $this->implodeDataToArray($fetch->fetch_assoc());
+                $statement = $this->connection->prepare($query);
+                $statement->execute($params);
+                if ($statement->rowCount() > 0) {
+                    $result = $this->implodeDataToArray($statement->fetch(PDO::FETCH_ASSOC));
                     return (
                     (new RestfulResponse(200, 'Validated Successfully', $result, 1))->expose()
                     );
                 } else return (
                 (new RestfulResponse(400, 'Failed to Validate', $data, 0))->expose()
                 );
-            } else {
-                return (
-                (new RestfulResponse(400, 'Encountered Error while validating', $data, 0))->expose()
-                );
-            }
+
         } catch (PDOException $e) {
             return (
             (new RestfulResponse(400, 'Unable to perform request with error message: ' . $e->getMessage(), $data, 0))->expose()
@@ -537,7 +553,7 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
      * @param $table_name
      * @param $data
      * @return string
-     * This is used to save multiple record at a time synchronously.
+     * This is used to save multiple record at a time synchronously. --DONE
      */
     public function saveMultiple($table_name,array $data):string
     {
@@ -548,6 +564,7 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
         $query = "insert Ignore  into {$table_name} (";
         $content = '';
         $count = 0;
+        $params = [];
         foreach ($data[0] as $key => $value) {
             $value = is_array($value) ? '[' . (stripslashes(implode(',', $value))) . ']' : (stripslashes($value));
             if ($value == null) continue;
@@ -568,10 +585,12 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
                 $value = is_array($value) ? '[' . (stripslashes(implode(',', $value))) . ']' : (stripslashes($value));
                 if ($value == null) continue;
                 if ($count == 0) {
-                    $content .= "'{$value}'";
+                    $content .= " ?";
+                    $params[] =$value;
                     ++$count;
                 } else {
-                    $content .= ",'{$value}'";
+                    $content .= ",?";
+                    $params[] =$value;
                     ++$count;
                 }
             }
@@ -588,7 +607,9 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
         //echo $query;
         //return;
         try {
-            if ($this->connection->query($query) && $this->connection->affected_rows > 0) {
+            $statement = $this->connection->prepare($query);
+            $statement->execute($params);
+            if ($statement->rowCount() > 0) {
                 if (isset($data[0]['key_fetch']))
                     return $this->list($table_name, array('key_fetch' => $data[0]['key_fetch']), '||');
                 else
@@ -714,7 +735,7 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
      * @param $data
      * @param $logic
      * @param $fields
-     * @return string
+     * @return string --DONE
      */
     public function getLastIndex($table_name,array $data,$logic='&&',array $fields=['*']):string
     {
@@ -725,14 +746,17 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
             $query = "Select {$fields} from {$table_name} where ";
             $content = '';
             $count = 0;
+            $params = [];
             foreach ($data as $key => $value) {
                 $value = is_array($value) ? '[' . (stripslashes(implode(',', $value))) . ']' : (stripslashes($value));
                 if ($value == null) continue;
                 if ($count == 0) {
-                    $content .= $key . " = '{$value}' ";
+                    $content .= $key . " = ?";
+                    $params[] =$value;
                     ++$count;
                 } else {
-                    $content .= " {$logic} " . $key . " = '{$value}' ";
+                    $content .= " {$logic} " . $key . " = ?";
+                    $params[] =$value;
                     ++$count;
                 }
             }
@@ -740,9 +764,10 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
             $query .= " ORDER BY id  DESC LIMIT 1";
         }
         try {
-            if ($fetch = ($this->connection->query($query))) {
-                if($this->connection->affected_rows>0){
-                $result = $this->implodeDataToArray($fetch->fetch_assoc());
+            $statement = $this->connection->prepare($query);
+            $statement->execute($params);
+            if ($statement->rowCount() > 0) {
+                $result = $this->implodeDataToArray($statement->fetch(PDO::FETCH_ASSOC));
                 if (empty($result)) $result = array();
                 return (
                 (new RestfulResponse(200, 'Last Index data fetched successfully', $result, 0))->expose()
@@ -751,12 +776,6 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
                 $result = array();
                 return (
                 (new RestfulResponse(400, 'No data', $result, 0))->expose()
-                );
-            }
-            } else {
-                $result = array();
-                return (
-                (new RestfulResponse(400, 'Encountered Error while getting last index data', $result, 0))->expose()
                 );
             }
         } catch (PDOException $e) {
