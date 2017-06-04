@@ -362,7 +362,8 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
                         if($key=='id' || strpos($key,'_id')!==false)
                         $content .= $key . " = ?  ";
                         else {
-                            $content .= $key . " LIKE %?% ";
+                            $value = "'%{$value}%'";
+                            $content .= $key . " LIKE ? ";
                         }
                         $params[] = $value;
                         ++$count;
@@ -370,7 +371,8 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
                         if($key=='id' || strpos($key,'_id')!==false)
                             $content .= " {$logic} " . $key . " = ? ";
                         else {
-                            $content .= " {$logic} " . $key . " LIKE %?% ";
+                            $value = "'%{$value}%'";
+                            $content .= " {$logic} " . $key . " LIKE ? ";
                         }
                         $params[] = $value;
                         ++$count;
@@ -741,12 +743,12 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
     {
         // TODO: Implement getLastIndex() method.
         $fields=$this->implodeFields($fields);
+        $params = [];
         $query = "Select {$fields} from {$table_name} ORDER BY id DESC LIMIT 1 ";
         if (!empty($data)) {
             $query = "Select {$fields} from {$table_name} where ";
             $content = '';
             $count = 0;
-            $params = [];
             foreach ($data as $key => $value) {
                 $value = is_array($value) ? '[' . (stripslashes(implode(',', $value))) . ']' : (stripslashes($value));
                 if ($value == null) continue;

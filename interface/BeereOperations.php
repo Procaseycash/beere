@@ -344,7 +344,7 @@ class BeereOperations extends Connection implements BeereInterfaces
                     ++$count;
                 }
             }
-           echo $query .= $content; echo '<br>';
+            $query .= $content;
         }
         try {
             if ($fetch = ($this->connection->query($query))) {
