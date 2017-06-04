@@ -190,7 +190,7 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
      * @param $sets
      * @param $logic
      * @return string
-     * This is used to update a particular data and return the updated data synchronously.
+     * This is used to update a particular data and return the updated data synchronously. --DONE
      */
     public function update($table_name, array $data,array $sets,$logic='&&'):string
     {
@@ -200,14 +200,17 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
         $query = "Update {$table_name} set ";
         $content = '';
         $count = 0;
+        $params=[];
         foreach ($sets as $key => $set) {
             if ($set === null) continue;
             $set = is_array($set) ? '[' . (stripslashes(implode(',', $set))) . ']' : ($set);
             if ($count == 0) {
-                $content .= $key . "='{$set}'";
+                $content .= $key . "= ?";
+                $params[] = $set;
                 ++$count;
             } else {
-                $content .= "," . $key . "='{$set}'";
+                $content .= "," . $key . "= ?";
+                $params[] = $set;
                 ++$count;
             }
         }
@@ -218,24 +221,28 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
                 if ($value === null) continue;
                 $value = is_array($value) ? '[' . (stripslashes(implode(',', $value))) . ']' : (stripslashes($value));
                 if ($count == 0) {
-                    $content .= $key . " = '{$value}' ";
+                    $content .= $key . " = ?";
+                    $params[] = $value;
                     ++$count;
                 } else {
-                    $content .= " {$logic} " . $key . " = '{$value}' ";
+                    $content .= " {$logic} " . $key . " = ? ";
+                    $params[] = $value;
                     ++$count;
                 }
             }
         }
         $query .= $content;
         try {
-            if ($this->connection->query($query) && $this->connection->affected_rows>0) {
+            $statement=$this->connection->prepare($query);
+            $statement->execute($params);
+
+            if ($statement->rowCount()>0) {
                 return $this->getADataByParam($table_name, $data);
             } else {
                 return (
                 (new RestfulResponse(400, 'Failed to Update', $data, 1))->expose()
                 );
             }
-
         } catch (PDOException $e) {
             return (
             (new RestfulResponse(400, 'Unable to perform request with error message: ' . $e->getMessage(), $data, 0))->expose()
@@ -397,11 +404,11 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
             if ($value == null) continue;
             if ($count == 0) {
                 $content .= $key . " = ?";
-                $params[]='?';
+                $params[]=$value;
                 ++$count;
             } else {
                 $content .= " && " . $key . " = ? ";
-                $params[]='?';
+                $params[]=$value;
                 ++$count;
             }
         }
