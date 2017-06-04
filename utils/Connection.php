@@ -8,38 +8,73 @@
  */
 class Connection
 {
-protected $connection;
+    protected $connection;
 
-    const CONFIG_OFFLINE=array(
+    const CONFIG_OFFLINE = array(
         'DATABASE_NAME'=>'zeus',
         'HOST'=>'localhost',
         'USER'=>'root',
         'PASSWORD'=>''
     );
 
-    const CONFIG_ONLINE=array(
+    const CONFIG_ONLINE = array(
         'DATABASE_NAME'=>'11111',
         'HOST'=>'1111.org',
         'USER'=>'1111',
         'PASSWORD'=>'11111'
     );
 
+    const CONNECTION_TYPE = ['PDO', 'MYSQLI'];
+
     /**
-     * Start Connection.
+     * Start Connection constructor.
+     * @param string $connection_type
      */
-    public function __construct()
+    public function __construct(string $connection_type)
     {
+
+    }
+
+    /**
+     * This is used to connect using mysqli
+     */
+    private function mysqliConnection() {
         try{
-            $this->connection=new mysqli(self::CONFIG_OFFLINE['HOST'],self::CONFIG_OFFLINE['USER'],self::CONFIG_OFFLINE['PASSWORD'],self::CONFIG_OFFLINE['DATABASE_NAME']);
+            $$this->connection = new mysqli(
+                self::CONFIG_OFFLINE['HOST'],
+                self::CONFIG_OFFLINE['USER'],
+                self::CONFIG_OFFLINE['PASSWORD'],
+                self::CONFIG_OFFLINE['DATABASE_NAME']
+            );
         }catch (Exception $e){
             echo"Connection Failed with Error Message: ".$e->getMessage();
         }
     }
 
     /**
-     * End Connection
+     * This is used to connect using PDO
+     */
+    private function pdoConnection() {
+        try {
+            $this->connection = new PDO(
+                "mysql:host=".self::CONFIG_OFFLINE['HOST'].
+                    ";dbname=".self::CONFIG_OFFLINE['DATABASE_NAME'],
+                    self::CONFIG_OFFLINE['USER'],
+                    self::CONFIG_OFFLINE['PASSWORD']
+            );
+            // set the PDO error mode to exception
+            $this->connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        }
+        catch(PDOException $e)
+        {
+            echo "Connection failed  with Error Message: " . $e->getMessage();
+        }
+    }
+
+    /**
+     * End connection Destructor
      */
     public function __destruct(){
-    $this->connection->close();
-}
+        $$this->connection->close();
+    }
 }
