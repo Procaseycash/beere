@@ -828,6 +828,7 @@ class BeereOperations extends Connection implements BeereInterfaces
             $data_length=strlen($value);
             $value=substr($value, 1,$data_length-2);
             $value=explode(',', $value);
+            unset($data_length);
         }
 
         return $item;
@@ -846,6 +847,7 @@ class BeereOperations extends Connection implements BeereInterfaces
                 $data_length=strlen($value);
                 $value=substr($value, 1,$data_length-2);
                 $value=explode(',', $value);
+                unset($data_length);
             }
         }
         return $data;
