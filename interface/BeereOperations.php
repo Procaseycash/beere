@@ -12,6 +12,9 @@ require_once("BeereInterfaces.php");
 class BeereOperations extends Connection implements BeereInterfaces
 {
 
+    /** Start Connection and pass connection type
+     * BeereOperations constructor.
+     */
     public function __construct()
     {
         parent::__construct(self::CONNECTION_TYPE['mysqli']);
@@ -860,5 +863,12 @@ class BeereOperations extends Connection implements BeereInterfaces
      */
     public function implodeFields(array $fields):string{
         return implode(',',$fields);
+    }
+
+    /**
+     * End connection Destructor
+     */
+    public function __destruct(){
+            $this->connection->close();
     }
 }
