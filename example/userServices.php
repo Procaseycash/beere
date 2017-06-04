@@ -70,7 +70,7 @@ $list=new BeereOperations();
     //You pass a single conditional operator such as AND etc as 3rd parameter in update method, default is AND
     echo "<br>";echo "<br>";
     echo"<b>List Data using Parameter(s)</b>"."<br>";echo "<br>";
-    $data=array('id'=>'6' );
+    $data=array('1d'=>1);
     $res=$list->list('user', $data);
     print_r(json_decode($res,true));
 }
