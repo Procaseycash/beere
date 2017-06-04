@@ -14,17 +14,19 @@ class Connection
         'DATABASE_NAME'=>'zeus',
         'HOST'=>'localhost',
         'USER'=>'root',
-        'PASSWORD'=>''
+        'PASSWORD'=>'',
+        'PORT'=>33012
     );
 
     const CONFIG_ONLINE = array(
         'DATABASE_NAME'=>'11111',
         'HOST'=>'1111.org',
         'USER'=>'1111',
-        'PASSWORD'=>'11111'
+        'PASSWORD'=>'11111',
+        'PORT'=>33012
     );
 
-    const CONNECTION_TYPE = ['PDO', 'MYSQLI'];
+    const CONNECTION_TYPE = ['pdo'=>'PDO', 'mysqli'=>'MYSQLI'];
 
     /**
      * Start Connection constructor.
@@ -34,7 +36,6 @@ class Connection
     public function __construct(String $connection_type)
     {
         if(in_array($connection_type,self::CONNECTION_TYPE)) {
-
             switch ($connection_type) {
                 case 'PDO':
                     $this->pdoConnection();
@@ -46,6 +47,8 @@ class Connection
                     throw new ErrorException('This Connection Type does not exist');
                     break;
             }
+        } else{
+            throw new ErrorException('Connection Type not Found');
         }
     }
 
@@ -54,14 +57,15 @@ class Connection
      */
     private function mysqliConnection() {
         try{
-            $$this->connection = new mysqli(
+        return $this->connection = new mysqli(
                 self::CONFIG_OFFLINE['HOST'],
                 self::CONFIG_OFFLINE['USER'],
                 self::CONFIG_OFFLINE['PASSWORD'],
-                self::CONFIG_OFFLINE['DATABASE_NAME']
+                self::CONFIG_OFFLINE['DATABASE_NAME'],
+                self::CONFIG_OFFLINE['PORT']
             );
         }catch (Exception $e){
-            echo"Connection Failed with Error Message: ".$e->getMessage();
+            throw new ErrorException("Connection failed  with Error Message: " . $e->getMessage());
         }
     }
 
@@ -72,23 +76,26 @@ class Connection
         try {
             $this->connection = new PDO(
                 "mysql:host=".self::CONFIG_OFFLINE['HOST'].
-                    ";dbname=".self::CONFIG_OFFLINE['DATABASE_NAME'],
+                    ";dbname=".self::CONFIG_OFFLINE['DATABASE_NAME'].
+                    ";port=".self::CONFIG_OFFLINE['PORT'],
                     self::CONFIG_OFFLINE['USER'],
                     self::CONFIG_OFFLINE['PASSWORD']
             );
             // set the PDO error mode to exception
             $this->connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            return $this->connection;
         }
         catch(PDOException $e)
         {
-            echo "Connection failed  with Error Message: " . $e->getMessage();
+            throw new ErrorException("Connection failed  with Error Message: " . $e->getMessage());
         }
     }
 
     /**
      * End connection Destructor
      */
-    public function __destruct(){
-        $$this->connection->close();
-    }
+/*    public function __destruct(){
+        $this->connection->close();
+    }*/
 }
