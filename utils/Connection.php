@@ -29,10 +29,24 @@ class Connection
     /**
      * Start Connection constructor.
      * @param string $connection_type
+     * @throws ErrorException
      */
     public function __construct(string $connection_type)
     {
+        if(in_array($connection_type,self::CONNECTION_TYPE)) {
 
+            switch ($connection_type) {
+                case 'PDO':
+                    $this->pdoConnection();
+                    break;
+                case 'MYSQLI':
+                    $this->mysqliConnection();
+                    break;
+                default:
+                    throw new ErrorException('This Connection Type does not exist');
+                    break;
+            }
+        }
     }
 
     /**
