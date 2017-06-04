@@ -94,7 +94,7 @@ class RestfulResponse extends Exception{
 	 * @param Object $data
 	 * @param int $code
 	 */
-	public  function __construct(int $status, String $message,array $data, bool $code,int $total=0) {
+	public  function __construct(int $status, String $message,array $data, bool $code, int $total=0) {
 		$this->setStatus($status);
 		$this->setUserFriendlyMessage($message);
 		$this->setData($data);
