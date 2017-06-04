@@ -146,10 +146,16 @@ class BeereOperations extends Connection implements BeereInterfaces
             $value = is_array($value) ? '[' . $this->connection->real_escape_string(stripslashes(implode(',', $value))) . ']' : $this->connection->real_escape_string(stripslashes($value));
             if ($value == null) continue;
             if ($count == 0) {
-                $content .= $key . " = '{$value}' ";
+                if($key=='id' || strpos($key,'_id')!==false)
+                    $content .= $key . " = '{$value}' ";
+                else
+                    $content .= $key . " LIKE '{$value}' ";
                 ++$count;
             } else {
-                $content .= " {$logic} " . $key . " LIKE '{$value}' ";
+                if($key=='id' || strpos($key,'_id')!==false)
+                    $content .= " {$logic} " . $key . " = '{$value}' ";
+                else
+                    $content .= " {$logic} " . $key . " LIKE '{$value}' ";
                 ++$count;
             }
         }
@@ -823,7 +829,6 @@ class BeereOperations extends Connection implements BeereInterfaces
             $data_length=strlen($value);
             $value=substr($value, 1,$data_length-2);
             $value=explode(',', $value);
-            unset($data_length);
         }
 
         return $item;
@@ -842,7 +847,6 @@ class BeereOperations extends Connection implements BeereInterfaces
                 $data_length=strlen($value);
                 $value=substr($value, 1,$data_length-2);
                 $value=explode(',', $value);
-                unset($data_length);
             }
         }
         return $data;
