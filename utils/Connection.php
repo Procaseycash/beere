@@ -92,10 +92,4 @@ class Connection
         }
     }
 
-    /**
-     * End connection Destructor
-     */
-/*    public function __destruct(){
-        $this->connection->close();
-    }*/
 }
