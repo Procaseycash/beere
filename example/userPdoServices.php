@@ -161,6 +161,31 @@ function deleteUser(){
     print_r(json_decode($result,true));
     echo "<br>";echo "<br>";
 }
+
+function updateAllUser() {
+    echo "<br>";echo "<br>";echo "<br>";
+    echo"<b>Async Update All User using parameters sets.</b>"."<br>";echo "<br>";
+    $user= new BeerePdoOperations();
+    $data=array('id'=>[150,151,152,153,154,155]);
+    $sets =array(
+        'programme_id'=>5,
+        'programme_info'=>'Computer_Science_CSC_'
+    );
+    $result=$user->updateAll('user',$data,$sets);
+    print_r(json_decode($result,true));
+    echo "<br>";echo "<br>";
+}
+
+function getAllUser() {
+    echo "<br>";echo "<br>";echo "<br>";
+    echo"<b>Get All User using parameters.</b>"."<br>";echo "<br>";
+    $user= new BeerePdoOperations();
+    $data=array('programme_id'=>5,'programme_info'=>'Computer_Science_CSC_');
+    $result=$user->getAll('user',$data);
+    print_r(json_decode($result,true));
+    echo "<br>";echo "<br>";
+}
+
 //Call Functions
 //saveUser();
 //updateUser();
@@ -170,3 +195,5 @@ function deleteUser(){
 //saveUsingMultiple();
 //listByLimitPager();
 //deleteUser();
+//updateAllUser();
+getAllUser();
