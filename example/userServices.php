@@ -185,6 +185,16 @@ function getAllUser() {
     echo "<br>";echo "<br>";
 }
 
+function getLastIndex() {
+    echo "<br>";echo "<br>";echo "<br>";
+    echo"<b>Get All User using parameters.</b>"."<br>";echo "<br>";
+    $user= new BeerePdoOperations();
+    $data=array();
+    $result=$user->getLastIndex('user',$data);
+    print_r(json_decode($result,true));
+    echo "<br>";echo "<br>";
+}
+
 //Call Functions
 //saveUser();
 //updateUser();
@@ -195,4 +205,5 @@ function getAllUser() {
 //listByLimitPager();
 //deleteUser();
 //updateAllUser();
-getAllUser();
+//getAllUser();
+//getLastIndex();
