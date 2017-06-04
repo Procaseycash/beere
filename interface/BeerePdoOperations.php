@@ -80,7 +80,7 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
      * @param $logic
      * @param $fields
      * @return string
-     * This is used to list all datas
+     * This is used to list all data -DONE
      */
     public function list($table_name, array $data,$logic='&&',array $fields=['*']):string
     {
@@ -91,14 +91,17 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
             $query = "Select {$fields}  from {$table_name} where ";
             $content = '';
             $count = 0;
+            $params=[];
             foreach ($data as $key => $value) {
                 $value = is_array($value) ? '[' . (stripslashes(implode(',', $value))) . ']' : (stripslashes($value));
                 if ($value == null) continue;
                 if ($count == 0) {
-                    $content .= $key . " = '{$value}' ";
+                    $content .= $key . " = ? ";
+                    $params[] = $value;
                     ++$count;
                 } else {
-                    $content .= " {$logic} " . $key . " = '{$value}' ";
+                    $content .= " {$logic} " . $key . " = ? ";
+                    $params[] = $value;
                     ++$count;
                 }
             }
@@ -106,20 +109,17 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
         }
         //echo $query;
         try {
-            if ($fetch = ($this->connection->query($query))) {
-                if ($this->connection->affected_rows > 0) {
-                    $result = $this->implodeListDataToListArray($fetch->fetch_all(MYSQLI_ASSOC));
+            $statement= $this->connection->prepare($query);
+            $statement->execute($params);
+                if ($statement->rowCount() > 0) {
+                    $result = $this->implodeListDataToListArray($statement->fetchAll(PDO::FETCH_ASSOC));
                     return (
                     (new RestfulResponse(200, 'Information Fetched Successfully', $result, 1))->expose()
                     );
                 } else   return (
                 (new RestfulResponse(400, 'Failed to List', $data, 0))->expose()
                 );
-            } else {
-                return (
-                (new RestfulResponse(400, 'Failed to List', $data, 0))->expose()
-                );
-            }
+
         } catch (PDOException $e) {
             return (
             (new RestfulResponse(400, 'Unable to perform request with error message: ' . $e->getMessage(), $data, 0))->expose()
@@ -142,14 +142,24 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
         $query = "delete from {$table_name} where ";
         $content = '';
         $count = 0;
+        $params=[];
         foreach ($data as $key => $value) {
             $value = is_array($value) ? '[' . (stripslashes(implode(',', $value))) . ']' : (stripslashes($value));
             if ($value == null) continue;
             if ($count == 0) {
-                $content .= $key . " = '{$value}' ";
+                if($key=='id' || strpos($key,'_id')!==false)
+                    $content .= $key . " = ? ";
+                else
+                    $content .= $key . " LIKE ? ";
+
+                $params[] = $value;
                 ++$count;
             } else {
-                $content .= " {$logic} " . $key . " LIKE '{$value}' ";
+                if($key=='id' || strpos($key,'_id')!==false)
+                    $content .= " {$logic} " . $key . " = ? ";
+                else
+                    $content .= " {$logic} " . $key . " LIKE ? ";
+                $params[] = $value;
                 ++$count;
             }
         }
@@ -822,7 +832,6 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
             $data_length=strlen($value);
             $value=substr($value, 1,$data_length-2);
             $value=explode(',', $value);
-            unset($data_length);
         }
 
         return $item;
@@ -841,7 +850,6 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
                 $data_length=strlen($value);
                 $value=substr($value, 1,$data_length-2);
                 $value=explode(',', $value);
-                unset($data_length);
             }
         }
         return $data;
