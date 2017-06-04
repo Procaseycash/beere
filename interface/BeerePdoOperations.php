@@ -132,7 +132,7 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
      * @param $data
      * @param $logic
      * @return string
-     * This is used to delete data by value passed
+     * This is used to delete data by value passed --DONE
      */
     public function delete($table_name, array $data,$logic='&&'):string
     {
@@ -152,21 +152,23 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
                 else
                     $content .= $key . " LIKE ? ";
 
-                $params[] = $value;
-                ++$count;
+                    $params[] = $value;
+                    ++$count;
             } else {
                 if($key=='id' || strpos($key,'_id')!==false)
                     $content .= " {$logic} " . $key . " = ? ";
                 else
                     $content .= " {$logic} " . $key . " LIKE ? ";
-                $params[] = $value;
-                ++$count;
+
+                    $params[] = $value;
+                    ++$count;
             }
         }
         $query .= $content;
         try {
-            $this->connection->query($query);
-            if ($this->connection->affected_rows > 0) {
+            $statement = $this->connection->prepare($query);
+            $statement->execute($params);
+            if ($statement->rowCount() > 0) {
                 return (
                 (new RestfulResponse(200, 'Deleted Successfully', $data, 1))->expose()
                 );
