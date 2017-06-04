@@ -90,7 +90,7 @@ function getData(){
     echo"Get Data using empty data array will throw error, cause daya must not be empty</b>"."<br>";
     $get=new BeereOperations();
     //to list all, pass empty array, while to list based on some data, pass array of data.
-    $data=array(); //data must not be empty array
+    $data=array('id'=>25); //data must not be empty array
     $res=$get->getADataByParam('user', $data);
     print_r(json_decode($res,true));
     //You pass a single conditional operator such as AND etc as 3rd parameter in getADataByParam method, default is AND
