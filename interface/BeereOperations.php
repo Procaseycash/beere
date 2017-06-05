@@ -17,7 +17,7 @@ class BeereOperations extends Connection implements BeereInterfaces
      */
     public function __construct()
     {
-        parent::__construct(self::CONNECTION_TYPE['mysqli']);
+        parent::__construct(self::CONNECTION_TYPE['mysqli']); //this is use to connect to mysqli version
     }
 
     /**
