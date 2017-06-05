@@ -188,10 +188,30 @@ function getAllUser() {
 
 function getLastIndex() {
     echo "<br>";echo "<br>";echo "<br>";
-    echo"<b>Get All User using parameters.</b>"."<br>";echo "<br>";
+    echo"<b>Get The Last Index User.</b>"."<br>";echo "<br>";
     $user= new BeerePdoOperations();
     $data=array();
     $result=$user->getLastIndex('user',$data);
+    print_r(json_decode($result,true));
+    echo "<br>";echo "<br>";
+}
+
+function getUserByRole() {
+    echo "<br>";echo "<br>";echo "<br>";
+    echo"<b>Get User By list or an array of roles.</b>"."<br>";echo "<br>";
+    $user= new BeerePdoOperations();
+    $data=array('SUPER_ADMIN','SCHOOL_ADMIN','BURSAR');
+    $result=$user->getByRole('user',$data,'||');
+    print_r(json_decode($result,true));
+    echo "<br>";echo "<br>";
+}
+
+function countByParam() {
+    echo "<br>";echo "<br>";echo "<br>";
+    echo"<b>Count User By parameters.</b>"."<br>";echo "<br>";
+    $user= new BeerePdoOperations();
+    $data=array('SUPER_ADMIN','SCHOOL_ADMIN','BURSAR');
+    $result=$user->countByParam('user',$data,'||');
     print_r(json_decode($result,true));
     echo "<br>";echo "<br>";
 }
@@ -207,4 +227,6 @@ function getLastIndex() {
 //deleteUser();
 //updateAllUser();
 //getAllUser();
-getLastIndex();
+//getLastIndex();
+//getUserByRole();
+//countByParam();
