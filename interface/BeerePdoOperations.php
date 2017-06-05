@@ -14,7 +14,7 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
 
     public function __construct()
     {
-        parent::__construct(self::CONNECTION_TYPE['pdo']);
+        parent::__construct(self::CONNECTION_TYPE['pdo']); //this allow connection to pdo version
     }
 
     /**
@@ -343,7 +343,7 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
      * @param $logic
      * @param $fields
      * @return string
-     * This is used to list any related data searched for.
+     * This is used to list any related data searched for.--DONE
      */
     public function getAll($table_name, array $data,$logic='&&',array $fields=['*']):string
     {
@@ -362,8 +362,7 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
                         if($key=='id' || strpos($key,'_id')!==false)
                         $content .= $key . " = ?  ";
                         else {
-                            $value = "'%{$value}%'";
-                            $content .= $key . " LIKE ? ";
+                            $content .= $key . " LIKE CONCAT ('%', ?, '%') ";
                         }
                         $params[] = $value;
                         ++$count;
@@ -371,19 +370,17 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
                         if($key=='id' || strpos($key,'_id')!==false)
                             $content .= " {$logic} " . $key . " = ? ";
                         else {
-                            $value = "'%{$value}%'";
-                            $content .= " {$logic} " . $key . " LIKE ? ";
+                            $content .= " {$logic} " . $key . " LIKE CONCAT ('%', ?, '%')";
                         }
                         $params[] = $value;
                         ++$count;
                 }
             }
-           echo $query .= $content; echo"<br>";
-           print_r($params);  echo"<br>";
+           $query .= $content;
         }
         try {
                 $statement= $this->connection->prepare($query);
-                $statement->execute([5]);
+                $statement->execute($params);
                 if ($statement->rowCount() > 0) {
                     $result = $this->implodeListDataToListArray($statement->fetchAll(PDO::FETCH_ASSOC));
                     return (
@@ -455,7 +452,7 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
      * @param $logic
      * @param $fields
      * @return string
-     * This is used to get users based on role passed
+     * This is used to get users based on role passed --DONE
      */
     public function getByRole($table_name, array $data,$logic='&&',array $fields=['*']):string
     {
@@ -466,33 +463,32 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
         $query = "Select {$fields} from {$table_name} where ";
         $content = '';
         $count = 0;
+        $params = [];
         foreach ($data as $value) {
             if ($value == null) continue;
             $value = is_array($value) ? '[' . (stripslashes(implode(',', $value))) . ']' : (stripslashes($value));
             if ($count == 0) {
-                $content .= 'roles' . " LIKE '%{$value}%' ";
+                $content .= 'roles' . " LIKE CONCAT('%', ?, '%') ";
+                $params[] =$value;
                 ++$count;
             } else {
-                $content .= " {$logic} " . 'roles' . " LIKE '%{$value}%' ";
+                $content .= " {$logic} " . 'roles' . " LIKE CONCAT('%', ?, '%') ";
+                $params[] =$value;
                 ++$count;
             }
         }
         $query .= $content;
         try {
-            if ($fetch = ($this->connection->query($query))) {
-                if ($this->connection->affected_rows > 0) {
-                    $result = $this->implodeListDataToListArray($fetch->fetch_all(MYSQLI_ASSOC));
+            $statement= $this->connection->prepare($query);
+            $statement->execute($params);
+            if ($statement->rowCount() > 0) {
+                    $result = $this->implodeListDataToListArray($statement->fetchAll(PDO::FETCH_ASSOC));
                     return (
                     (new RestfulResponse(200, 'Fetched by Roles Successfully', $result, 1))->expose()
                     );
                 } else return (
                 (new RestfulResponse(400, 'Failed to fetch by roles', $data, 0))->expose()
                 );
-            } else {
-                return (
-                (new RestfulResponse(400, 'Encountered Fatal Error', $data, 0))->expose()
-                );
-            }
         } catch (PDOException $e) {
             return (
             (new RestfulResponse(400, 'Unable to perform request with error message: ' . $e->getMessage(), $data, 0))->expose()
@@ -639,8 +635,8 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
      * @param int $limit
      * @param $fields
      * @return string
-     * This is used to list data based on speculated limit with offset and condition passed
-     */
+     * This is used to list data based on speculated limit with offset and condition passed --DONE
+*/
     public function listByLimit($table_name,array $data,$logic='&&',$page=1,$limit=200,array $fields=['*']):string
     {
         // TODO: Implement listByLimit() method.
@@ -648,6 +644,7 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
         $page = (int)$page;
         $total = 0;
         if ($page == 1) {
+            $params= [];
             $getTotal = "Select COUNT(DISTINCT id) as totalLength from {$table_name}";
             if (!empty($data)) {
                 $getTotal = "Select COUNT(DISTINCT id) as totalLength from {$table_name} where ";
@@ -657,26 +654,34 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
                     $value = is_array($value) ? '[' . (stripslashes(implode(',', $value))) . ']' : (stripslashes($value));
                     if ($value == null) continue;
                     if ($count == 0) {
+
                         if($key=='id' || strpos($key,'_id')!==false)
-                            $content .= $key . " = '{$value}' ";
+                            $content .= $key . " = ? ";
                         else
-                            $content .= $key . " LIKE '%{$value}%' ";
+                            $content .= $key . " LIKE CONCAT('%', ?, '%') ";
+
+                        $params[] = $value;
                         ++$count;
                     } else {
+
                         if($key=='id' || strpos($key,'_id')!==false)
-                            $content .= " {$logic} " . $key . " = '{$value}' ";
+                            $content .= " {$logic} " . $key . " = ? ";
                         else
-                            $content .= " {$logic} " . $key . " LIKE '%{$value}%' ";
+                            $content .= " {$logic} " . $key . " LIKE CONCAT('%', ?, '%') ";
+
+                        $params[] = $value;
                         ++$count;
                     }
                 }
                 $getTotal .= $content;
             }
-            $myTotal = $this->connection->query($getTotal);
-            $total = (int)($myTotal->fetch_assoc()['totalLength']);
+            $statement = $this->connection->prepare($getTotal);
+            $statement->execute($params);
+            $total = (int)($statement->fetch(PDO::FETCH_ASSOC)['totalLength']);
         }
         $offset = ($page - 1) * $limit;
         $query = "Select {$fields} from {$table_name} LIMIT {$limit}  OFFSET {$offset} ";
+        $params= [];
         if (!empty($data)) {
             $query = "Select {$fields} from {$table_name} where ";
             $content = '';
@@ -686,15 +691,18 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
                 if ($value == null) continue;
                if ($count == 0) {
                     if($key=='id' || strpos($key,'_id')!==false)
-                    $content .= $key . " = '{$value}' ";
-                else
-                   $content .= $key . " LIKE '%{$value}%' "; 
-                    ++$count;
+                        $content .= $key . " = ? ";
+                    else
+                        $content .= $key . " LIKE CONCAT('%', ?, '%') ";
+
+                   $params[] = $value;
+                   ++$count;
                 } else {
                        if($key=='id' || strpos($key,'_id')!==false)
-                    $content .= " {$logic} " . $key . " = '{$value}' ";
-                else    
-                    $content .= " {$logic} " . $key . " LIKE '%{$value}%' ";
+                            $content .= " {$logic} " . $key . " = ? ";
+                       else
+                            $content .= " {$logic} " . $key . " LIKE CONCAT('%', ?, '%') ";
+                    $params[] = $value;
                     ++$count;
                 }
             }
@@ -703,9 +711,10 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
         }
         //echo $query; return;
         try {
-            if ($fetch = ($this->connection->query($query))) {
-                if ($this->connection->affected_rows > 0) {
-                    $result = $this->implodeListDataToListArray($fetch->fetch_all(MYSQLI_ASSOC));
+            $statement = $this->connection->prepare($query);
+            $statement->execute($params);
+            if ($statement->rowCount() > 0) {
+                    $result = $this->implodeListDataToListArray($statement->fetchAll(PDO::FETCH_ASSOC));
                     //print_r($total);
                     if ($page == 1) {
                         return (
@@ -719,12 +728,6 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
                     (new RestfulResponse(400, 'Failed to List', $data, 0))->expose()
                     );
                 }
-            } else {
-                $data = array(0);
-                return (
-                (new RestfulResponse(400, 'Failed to List', $data, 0))->expose()
-                );
-            }
         } catch (PDOException $e) {
             return (
             (new RestfulResponse(400, 'Unable to perform request with error message: ' . $e->getMessage(), $data, 0))->expose()
@@ -800,6 +803,7 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
         // TODO: Implement count() method.
         $result = array();
         $getTotal = "Select COUNT(DISTINCT id) as totalLength from {$table_name}";
+        $params = [];
         if (!empty($data)) {
             $getTotal = "Select COUNT(DISTINCT id) as totalLength from {$table_name} where ";
             $content = '';
@@ -809,15 +813,19 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
                 if ($value == null) continue;
                 if ($count == 0) {
                     if($key=='id' || strpos($key,'_id')!==false)
-                        $content .= $key . " = '{$value}' ";
+                        $content .= $key . " = ? ";
                     else
-                        $content .= $key . " LIKE '%{$value}%' ";
+                        $content .= $key . " LIKE CONCAT('%', ?, '%')  ";
+
+                    $params[] = $value;
                     ++$count;
                 } else {
                     if($key=='id' || strpos($key,'_id')!==false)
-                        $content .= " {$logic} " . $key . " = '{$value}' ";
+                        $content .= " {$logic} " . $key . " = ? ";
                     else
-                        $content .= " {$logic} " . $key . " LIKE '%{$value}%' ";
+                        $content .= " {$logic} " . $key . " LIKE CONCAT('%', ?, '%')  ";
+
+                    $params[] = $value;
                     ++$count;
                 }
             }
@@ -825,9 +833,10 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
         }
         // echo $getTotal;
         try {
-            if ($myTotal = $this->connection->query($getTotal)) {
-                if ($this->connection->affected_rows > 0) {
-                    $total = (int)($myTotal->fetch_assoc()['totalLength']);
+            $statement = $this->connection->prepare($getTotal);
+            $statement->execute($params);
+            if ($statement->rowCount() > 0) {
+                    $total = (int)($statement->fetch(PDO::FETCH_ASSOC)['totalLength']);
                     $result[] = $total;
                     return (
                     (new RestfulResponse(200, 'Count Successfully', $result, 1))->expose());
@@ -837,12 +846,6 @@ class BeerePdoOperations extends Connection implements BeereInterfaces
                     (new RestfulResponse(400, 'Failed to Count', $data, 0))->expose()
                     );
                 }
-            } else {
-                $data = array(0);
-                return (
-                (new RestfulResponse(400, 'Failed to Count', $data, 0))->expose()
-                );
-            }
         } catch (PDOException $e) {
             return (
             (new RestfulResponse(400, 'Unable to perform request with error message: ' . $e->getMessage(), $data, 0))->expose()
